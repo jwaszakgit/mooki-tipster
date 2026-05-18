@@ -1,11 +1,4 @@
 {
-  "routes": [
-    {
-      "route": "/*",
-      "serve": "/index.html",
-      "statusCode": 200
-    }
-  ],
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": ["/assets/*", "/icons/*", "/*.webmanifest", "/sw.js", "/workbox-*.js"]
@@ -14,13 +7,6 @@
     ".webmanifest": "application/manifest+json"
   },
   "globalHeaders": {
-    "cache-control": "no-store",
     "X-Content-Type-Options": "nosniff"
-  },
-  "responseOverrides": {
-    "404": {
-      "rewrite": "/index.html",
-      "statusCode": 200
-    }
   }
 }
