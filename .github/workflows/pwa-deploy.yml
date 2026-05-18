@@ -39,7 +39,7 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: 'upload'
-          # pre-built — skip SWA's own build step
-          app_location: 'pwa'
-          output_location: 'dist'
+          # point directly at the Vite output so SWA serves the built bundle
+          app_location: 'pwa/dist'
+          output_location: ''
           skip_app_build: true
