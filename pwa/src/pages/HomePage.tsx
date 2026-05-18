@@ -23,13 +23,25 @@ export function HomePage() {
   } = useAppStore()
 
   const [showTooltip, setShowTooltip] = useState(false)
+  const [billFocused, setBillFocused] = useState(false)
   const tooltipTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     return () => { if (tooltipTimer.current) clearTimeout(tooltipTimer.current) }
   }, [])
 
-  const bill = parseFloat(billText) || 0
+  // billText stores raw digit characters; decimal is implied at 2 places from right
+  const bill = billText ? parseInt(billText) / 100 : 0
+
+  function formatBillDisplay(digits: string): string {
+    if (!digits) return ''
+    return (parseInt(digits) / 100).toFixed(2)
+  }
+
+  function handleBillChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 8)
+    setBillText(digits)
+  }
 
   const result = useMemo(() => {
     const variables = settings.variables.map(v => ({
@@ -78,17 +90,20 @@ export function HomePage() {
             <input
               className={styles.billInput}
               type="text"
-              inputMode="decimal"
+              inputMode="numeric"
               placeholder="0.00"
-              value={billText}
-              onChange={e => {
-                const val = e.target.value
-                if (/^(\d*\.?\d{0,2})?$/.test(val)) setBillText(val)
-              }}
-              onFocus={e => e.target.select()}
+              value={formatBillDisplay(billText)}
+              onChange={handleBillChange}
+              onFocus={e => { setBillFocused(true); e.target.select() }}
+              onBlur={() => setBillFocused(false)}
             />
-            {billText.length > 0 && (
-              <button className={styles.billClear} onClick={() => setBillText('')} aria-label="Clear">
+            {billFocused && billText.length > 0 && (
+              <button
+                className={styles.billClear}
+                onMouseDown={e => e.preventDefault()}
+                onClick={() => setBillText('')}
+                aria-label="Clear"
+              >
                 ×
               </button>
             )}

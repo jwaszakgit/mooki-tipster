@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
 import { useAppStore } from '../store/appStore'
+import { useInstallPrompt } from '../hooks/useInstallPrompt'
+import { AddToHomeModal } from '../components/AddToHomeModal'
 import type { Currency, TipVariable } from '../store/appStore'
 import styles from './SettingsPage.module.css'
 
@@ -36,6 +38,8 @@ export function SettingsPage() {
 
   const [confirmed, setConfirmed] = useState(false)
   const [focusedInput, setFocusedInput] = useState<string | null>(null)
+  const [showInstallModal, setShowInstallModal] = useState(false)
+  const { installState, promptInstall } = useInstallPrompt()
 
   // Drag state — ref for mutable tracking, state for visual re-renders
   const dragRef = useRef<{ from: number; to: number } | null>(null)
@@ -368,6 +372,20 @@ export function SettingsPage() {
         </div>
       </div>
 
+      {/* Install app */}
+      {(installState === 'android' || installState === 'ios') && (
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Install app</h2>
+          <p className={styles.meta}>Add mooki tipster to your home screen for quick access.</p>
+          <button
+            className={styles.installBtn}
+            onClick={() => installState === 'android' ? promptInstall() : setShowInstallModal(true)}
+          >
+            Add to Home Screen
+          </button>
+        </div>
+      )}
+
       {/* Legal */}
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>Legal</h2>
@@ -395,6 +413,8 @@ export function SettingsPage() {
         <p>mooki tipster — Simple apps for a simple life.™</p>
         <p style={{ marginTop: 4 }}>No account. No tracking. No fuss.</p>
       </div>
+
+      {showInstallModal && <AddToHomeModal onClose={() => setShowInstallModal(false)} />}
     </div>
   )
 }
