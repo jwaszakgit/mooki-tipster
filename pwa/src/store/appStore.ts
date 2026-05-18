@@ -54,6 +54,7 @@ interface AppState {
   removeVariable: (id: string) => void
   updateVariable: (id: string, patch: Partial<Pick<TipVariable, 'label' | 'customPct'>>) => void
   reorderVariables: (fromIndex: number, toIndex: number) => void
+  resetSettings: () => void
   setRecoveryEmail: (email: string) => void
   setBillText: (text: string) => void
   setLikert: (id: string, value: number) => void
@@ -175,6 +176,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     const updated = { ...settings, variables }
     set({ settings: updated })
     saveLocalData(getSerializableState({ ...get(), settings: updated }))
+  },
+
+  resetSettings: () => {
+    const defaults = makeDefaultSettings()
+    set({ settings: defaults, recoveryEmail: '' })
+    saveLocalData(getSerializableState({ ...get(), settings: defaults, recoveryEmail: '' }))
   },
 
   setRecoveryEmail: (email) => {

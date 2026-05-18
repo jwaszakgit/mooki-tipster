@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react'
 import { useAppStore } from '../store/appStore'
-import { clearLocalData } from '../services/localStore'
 import type { Currency, TipVariable } from '../store/appStore'
 import styles from './SettingsPage.module.css'
 
@@ -30,11 +29,13 @@ export function SettingsPage() {
     removeVariable,
     updateVariable,
     reorderVariables,
+    resetSettings,
     recoveryEmail,
     setRecoveryEmail,
   } = useAppStore()
 
   const [confirmed, setConfirmed] = useState(false)
+  const [focusedInput, setFocusedInput] = useState<string | null>(null)
 
   // Drag state — ref for mutable tracking, state for visual re-renders
   const dragRef = useRef<{ from: number; to: number } | null>(null)
@@ -47,10 +48,8 @@ export function SettingsPage() {
 
   function handleReset() {
     if (!confirmed) { setConfirmed(true); return }
-    clearLocalData().then(() => {
-      localStorage.removeItem('mooki_tipster_device_id')
-      window.location.reload()
-    })
+    resetSettings()
+    setConfirmed(false)
   }
 
   function switchToCustom() {
@@ -197,9 +196,15 @@ export function SettingsPage() {
                 value={settings.fixedTipNickname}
                 onChange={e => updateSettings({ fixedTipNickname: e.target.value })}
                 placeholder="Nickname for this fixed tip"
+                onFocus={() => setFocusedInput('nickname')}
+                onBlur={() => setFocusedInput(null)}
               />
-              {settings.fixedTipNickname && (
-                <button className={styles.textInputClear} onClick={() => updateSettings({ fixedTipNickname: '' })}>×</button>
+              {focusedInput === 'nickname' && settings.fixedTipNickname && (
+                <button
+                  className={styles.textInputClear}
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => updateSettings({ fixedTipNickname: '' })}
+                >×</button>
               )}
             </div>
           </>
@@ -247,7 +252,7 @@ export function SettingsPage() {
       {/* Variables */}
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>Tip variables</h2>
-        <p className={styles.meta}>Up to 7. Each rated 1–5 by the tipper.</p>
+        <p className={styles.meta}>Up to 7. Each rated 1–5 by the tipper. Swipe left to delete.</p>
         {settings.variableCalcMethod === 'CUSTOM' && (
           <>
             <p className={`${styles.meta} ${customSum !== 100 ? styles.metaWarn : styles.metaOk}`} style={{ marginTop: 2 }}>
@@ -300,9 +305,15 @@ export function SettingsPage() {
                       value={v.label}
                       onChange={e => updateVariable(v.id, { label: e.target.value })}
                       placeholder="Variable name"
+                      onFocus={() => setFocusedInput(v.id)}
+                      onBlur={() => setFocusedInput(null)}
                     />
-                    {v.label && (
-                      <button className={styles.varLabelClear} onClick={() => updateVariable(v.id, { label: '' })}>×</button>
+                    {focusedInput === v.id && v.label && (
+                      <button
+                        className={styles.varLabelClear}
+                        onMouseDown={e => e.preventDefault()}
+                        onClick={() => updateVariable(v.id, { label: '' })}
+                      >×</button>
                     )}
                   </div>
                   {settings.variableCalcMethod === 'CUSTOM' && (
@@ -344,9 +355,15 @@ export function SettingsPage() {
             placeholder="your@email.com"
             value={recoveryEmail}
             onChange={e => setRecoveryEmail(e.target.value)}
+            onFocus={() => setFocusedInput('email')}
+            onBlur={() => setFocusedInput(null)}
           />
-          {recoveryEmail && (
-            <button className={styles.textInputClear} onClick={() => setRecoveryEmail('')}>×</button>
+          {focusedInput === 'email' && recoveryEmail && (
+            <button
+              className={styles.textInputClear}
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => setRecoveryEmail('')}
+            >×</button>
           )}
         </div>
       </div>
