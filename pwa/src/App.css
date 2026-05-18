@@ -1,22 +1,39 @@
-:root {
-  --color-brand: #378ADD;
-  --font-sans: 'Outfit', sans-serif;
-}
-
 .app {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100dvh;
-  padding: 2rem;
-  font-family: var(--font-sans);
+  height: 100%;
+  background: var(--color-bg);
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
 }
 
-.wordmark {
-  font-size: clamp(2rem, 8vw, 4rem);
-  font-weight: 300;
-  letter-spacing: -0.03em;
-  color: var(--color-brand);
-  margin: 0;
+.appHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.appBrand { font-size: 24px; line-height: 1; }
+.brandM   { font-weight: 600; color: var(--color-brand); }
+.brandRest { font-weight: 400; color: var(--color-text); }
+
+.appGear {
+  background: none;
+  font-size: 22px;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.appMain {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.placeholder {
+  font-size: 15px;
+  color: var(--color-text-muted);
 }

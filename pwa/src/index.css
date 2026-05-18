@@ -1,11 +1,66 @@
-*,
-*::before,
-*::after {
+:root {
+  /* mooki brand */
+  --color-brand:        #378ADD;
+  --color-brand-dark:   #185FA5;
+  --color-brand-light:  #E6F1FB;
+
+  /* Neutrals */
+  --color-bg:           #ffffff;
+  --color-surface:      #f7f8fa;
+  --color-border:       #e2e4e9;
+  --color-text:         #1a1a1a;
+  --color-text-muted:   #6b7280;
+  --color-red:          #C0392B;
+  --color-green:        #1D9E75;
+
+  /* Typography */
+  --font:               'Outfit', sans-serif;
+  --radius:             12px;
+  --radius-sm:          8px;
+
+  /* Safe area insets for notched phones */
+  --safe-top:           env(safe-area-inset-top);
+  --safe-bottom:        env(safe-area-inset-bottom);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg:         #0f1117;
+    --color-surface:    #1a1d27;
+    --color-border:     #2a2d3a;
+    --color-text:       #f0f0f0;
+    --color-text-muted: #9ca3af;
+    --color-brand-light:#1a2d3f;
+  }
+}
+
+*, *::before, *::after {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 
 body {
-  margin: 0;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font);
+  background: var(--color-bg);
+  color: var(--color-text);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  font-family: var(--font);
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+input {
+  font-family: var(--font);
 }

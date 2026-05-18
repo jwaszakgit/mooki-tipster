@@ -202,6 +202,22 @@ describe('roundUp', () => {
     const r = calculateTip(BASE, MID4, 47)
     expect(r.tipAmountFinal).toBeCloseTo(8.225, 3)
   })
+
+  it('split by 4 — tip ceils but per-person divides the ceiled tip', () => {
+    // tipAmountFinal = ceil($47 × 17.5%) = ceil($8.225) = $9
+    // perPersonTip   = 9 / 4 = $2.25  (no additional ceil)
+    // perPersonTotal = (47 + 9) / 4   = $14.00
+    const r = calculateTip({ ...BASE, roundUp: true }, MID4, 47, 4)
+    expect(r.tipAmountFinal).toBe(9)
+    expect(r.perPersonTip).toBeCloseTo(2.25, 6)
+    expect(r.perPersonTotal).toBeCloseTo(14, 6)
+  })
+
+  it('split by 1 with roundUp — per-person equals ceiled tip', () => {
+    const r = calculateTip({ ...BASE, roundUp: true }, MID4, 47, 1)
+    expect(r.perPersonTip).toBe(r.tipAmountFinal)
+    expect(r.perPersonTotal).toBeCloseTo(47 + r.tipAmountFinal, 6)
+  })
 })
 
 // ── Currency formatting ────────────────────────────────────────────────────

@@ -1,0 +1,332 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-bg);
+  padding-top: var(--safe-top);
+}
+
+/* ── Header ─────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.brand { font-size: 24px; line-height: 1; }
+.brandM   { font-weight: 600; color: var(--color-brand); }
+.brandRest { font-weight: 400; color: var(--color-text); }
+
+.gear {
+  background: none;
+  font-size: 22px;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+/* ── Scroll area ─────────────────────────────────── */
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 12px 0;
+}
+
+/* ── Cards ───────────────────────────────────────── */
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+.cardLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+
+/* ── Bill input ──────────────────────────────────── */
+
+.billRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.currencySymbol {
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.billInput {
+  flex: 1;
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--color-text);
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font);
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.billInput::placeholder {
+  color: var(--color-border);
+}
+
+.billClear {
+  background: none;
+  font-size: 22px;
+  color: var(--color-text-muted);
+  padding: 2px 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: color 0.1s;
+  line-height: 1;
+}
+
+.billClear:hover {
+  color: var(--color-text);
+}
+
+/* ── Fixed tip row ───────────────────────────────── */
+
+.fixedRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fixedNickname {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text);
+  flex: 1;
+}
+
+.fixedAmounts {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.fixedPct {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.fixedAmt {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* ── Variable rating rows ────────────────────────── */
+
+.varList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.varItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.varName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.likertRow {
+  display: flex;
+  gap: 6px;
+}
+
+.likertBtn {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  border: 1.5px solid var(--color-border);
+  font-size: 20px;
+  line-height: 1;
+  font-family: var(--font);
+  transition: all 0.12s;
+}
+
+.likertSelected {
+  background: var(--color-brand-light);
+  border-color: var(--color-brand);
+  transform: scale(1.08);
+}
+
+/* ── Summary grid ────────────────────────────────── */
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  column-gap: 12px;
+  row-gap: 8px;
+  align-items: baseline;
+}
+
+.summaryKey {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.summaryPct {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-brand);
+  text-align: right;
+}
+
+.summaryAmt {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.summaryTotalKey {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.summaryTotalAmt {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-green);
+}
+
+/* ── Split selector ──────────────────────────────── */
+
+.splitWrap {
+  position: relative;
+}
+
+.splitScroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 2px;
+}
+
+.splitScroll::-webkit-scrollbar {
+  display: none;
+}
+
+.splitBtn {
+  /* (container - 4 gaps) / 5 = show 5, overflow reveals 6-10 */
+  flex: 0 0 calc((100% - 32px) / 5);
+  padding: 10px 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  border: 1.5px solid var(--color-border);
+  font-size: 16px;
+  font-weight: 600;
+  font-family: var(--font);
+  color: var(--color-text);
+  text-align: center;
+  transition: all 0.12s;
+}
+
+.splitActive {
+  background: var(--color-brand);
+  color: white;
+  border-color: var(--color-brand);
+}
+
+.splitFade {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 2px;
+  width: 28px;
+  background: linear-gradient(to right, transparent, var(--color-surface));
+  pointer-events: none;
+}
+
+.perPerson {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border);
+}
+
+/* ── Save & Share ────────────────────────────────── */
+
+.saveWrap {
+  margin-bottom: 4px;
+}
+
+.saveBtn {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--font);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0.65;
+  cursor: default;
+}
+
+.saveBadge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.tooltip {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+
+/* ── Bottom padding ──────────────────────────────── */
+
+.bottomPad {
+  height: calc(16px + var(--safe-bottom));
+}

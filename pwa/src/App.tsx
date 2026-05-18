@@ -1,9 +1,15 @@
-import './App.css'
+import { useEffect } from 'react'
+import { useAppStore } from './store/appStore'
+import { HomePage } from './pages/HomePage'
+import { SettingsPage } from './pages/SettingsPage'
 
 export default function App() {
-  return (
-    <main className="app">
-      <h1 className="wordmark">mooki tipster</h1>
-    </main>
-  )
+  const { page, initDevice } = useAppStore()
+
+  useEffect(() => {
+    initDevice()
+  }, [initDevice])
+
+  if (page === 'settings') return <SettingsPage />
+  return <HomePage />
 }
