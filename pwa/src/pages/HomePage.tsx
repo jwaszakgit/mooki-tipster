@@ -144,7 +144,7 @@ export function HomePage() {
           <p className={styles.cardLabel}>Tip Summary</p>
           <div className={styles.summaryGrid}>
             <span className={styles.summaryKey}>Tip</span>
-            <span className={styles.summaryPct}>{result.tipPctFinal.toFixed(1)}%</span>
+            <span className={styles.summaryPct}>{Math.round(result.tipPctFinal)}%</span>
             <span className={styles.summaryAmt}>{hasAmount ? result.formatted.tipAmountFinal : '—'}</span>
 
             <span className={`${styles.summaryKey} ${styles.summaryTotalKey}`}>Total</span>

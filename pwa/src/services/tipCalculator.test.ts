@@ -218,6 +218,14 @@ describe('roundUp', () => {
     expect(r.perPersonTip).toBe(r.tipAmountFinal)
     expect(r.perPersonTotal).toBeCloseTo(47 + r.tipAmountFinal, 6)
   })
+
+  it('does not ceil if ceil would exceed maxTipPct', () => {
+    // $7 bill, maxTipPct=25%, all HAPPY4 (Likert 5) → 25% → tip = $1.75
+    // ceil($1.75) = $2 which is 28.57% > maxTipPct=25%, so no rounding
+    const r = calculateTip({ ...BASE, maxTipPct: 25, roundUp: true }, HAPPY4, 7)
+    expect(r.tipAmountFinal).toBeCloseTo(1.75, 6)
+    expect(r.tipPctFinal).toBeCloseTo(25, 4)
+  })
 })
 
 // ── Currency formatting ────────────────────────────────────────────────────

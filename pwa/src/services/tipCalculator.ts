@@ -98,9 +98,13 @@ export function calculateTip(
   let tipPctFinal = fixedPct + totalVariablePct
   let tipAmountFinal = (billAmount * tipPctFinal) / 100
 
-  if (roundUp) {
-    tipAmountFinal = Math.ceil(tipAmountFinal)
-    tipPctFinal = (tipAmountFinal / billAmount) * 100
+  if (roundUp && billAmount > 0) {
+    const rounded = Math.ceil(tipAmountFinal)
+    const maxTipAmount = (billAmount * maxTipPct) / 100
+    if (rounded <= maxTipAmount) {
+      tipAmountFinal = rounded
+      tipPctFinal = (tipAmountFinal / billAmount) * 100
+    }
   }
 
   const perPersonTip = tipAmountFinal / splitBy

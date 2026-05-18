@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useAppStore } from '../store/appStore'
 import { clearLocalData } from '../services/localStore'
-import type { Currency } from '../store/appStore'
+import type { Currency, TipVariable } from '../store/appStore'
 import styles from './SettingsPage.module.css'
 
 const CURRENCY_OPTIONS: { value: Currency; label: string; symbol: string }[] = [
@@ -12,6 +12,14 @@ const CURRENCY_OPTIONS: { value: Currency; label: string; symbol: string }[] = [
 ]
 
 const ROW_HEIGHT = 48
+
+function getEqualDistribution(variables: TipVariable[]): TipVariable[] {
+  const n = variables.length
+  if (n === 0) return variables
+  const base = Math.floor(100 / n)
+  const remainder = 100 - base * n
+  return variables.map((v, i) => ({ ...v, customPct: i === 0 ? base + remainder : base }))
+}
 
 export function SettingsPage() {
   const {
@@ -33,6 +41,10 @@ export function SettingsPage() {
   const dragStartY = useRef(0)
   const [dragVisual, setDragVisual] = useState<{ from: number; to: number } | null>(null)
 
+  // Swipe-to-delete state
+  const [swipeOpenId, setSwipeOpenId] = useState<string | null>(null)
+  const swipeRef = useRef<{ id: string; startX: number; startY: number; active: boolean; cancelled: boolean } | null>(null)
+
   function handleReset() {
     if (!confirmed) { setConfirmed(true); return }
     clearLocalData().then(() => {
@@ -43,18 +55,15 @@ export function SettingsPage() {
 
   function switchToCustom() {
     if (settings.variableCalcMethod === 'CUSTOM') return
-    const n = settings.variables.length
-    if (n === 0) { updateSettings({ variableCalcMethod: 'CUSTOM' }); return }
-    const base = Math.floor(100 / n)
-    const remainder = 100 - base * n
-    const variables = settings.variables.map((v, i) => ({
-      ...v,
-      customPct: i === 0 ? base + remainder : base,
-    }))
-    updateSettings({ variableCalcMethod: 'CUSTOM', variables })
+    updateSettings({ variableCalcMethod: 'CUSTOM', variables: getEqualDistribution(settings.variables) })
+  }
+
+  function distributeCustomPcts() {
+    updateSettings({ variables: getEqualDistribution(settings.variables) })
   }
 
   function handleDragStart(e: React.PointerEvent<HTMLElement>, idx: number) {
+    setSwipeOpenId(null)
     e.currentTarget.setPointerCapture(e.pointerId)
     dragStartY.current = e.clientY
     dragRef.current = { from: idx, to: idx }
@@ -79,6 +88,30 @@ export function SettingsPage() {
     }
     dragRef.current = null
     setDragVisual(null)
+  }
+
+  function onContentDown(e: React.PointerEvent<HTMLElement>, id: string) {
+    if (swipeOpenId && swipeOpenId !== id) { setSwipeOpenId(null); return }
+    swipeRef.current = { id, startX: e.clientX, startY: e.clientY, active: false, cancelled: false }
+  }
+
+  function onContentMove(e: React.PointerEvent) {
+    const s = swipeRef.current
+    if (!s || s.cancelled) return
+    const dx = e.clientX - s.startX
+    const dy = e.clientY - s.startY
+    if (!s.active) {
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) { s.cancelled = true; return }
+      if (Math.abs(dx) > 8) s.active = true
+    }
+  }
+
+  function onContentUp(e: React.PointerEvent) {
+    const s = swipeRef.current; swipeRef.current = null
+    if (!s) return
+    if (!s.active) { if (swipeOpenId === s.id) setSwipeOpenId(null); return }
+    const dx = e.clientX - s.startX
+    setSwipeOpenId(dx < -36 ? s.id : null)
   }
 
   const customSum = settings.variables.reduce((sum, v) => sum + (v.customPct ?? 0), 0)
@@ -158,13 +191,17 @@ export function SettingsPage() {
               >+</button>
             </div>
             <p className={styles.inputLabel} style={{ marginTop: 10 }}>Fixed amount as labeled during calculation:</p>
-            <input
-              className={styles.textInput}
-              style={{ marginTop: 4 }}
-              value={settings.fixedTipNickname}
-              onChange={e => updateSettings({ fixedTipNickname: e.target.value })}
-              placeholder="Nickname for this fixed tip"
-            />
+            <div className={styles.textInputWrap} style={{ marginTop: 4 }}>
+              <input
+                className={styles.textInput}
+                value={settings.fixedTipNickname}
+                onChange={e => updateSettings({ fixedTipNickname: e.target.value })}
+                placeholder="Nickname for this fixed tip"
+              />
+              {settings.fixedTipNickname && (
+                <button className={styles.textInputClear} onClick={() => updateSettings({ fixedTipNickname: '' })}>×</button>
+              )}
+            </div>
           </>
         )}
       </div>
@@ -212,9 +249,14 @@ export function SettingsPage() {
         <h2 className={styles.sectionTitle}>Tip variables</h2>
         <p className={styles.meta}>Up to 7. Each rated 1–5 by the tipper.</p>
         {settings.variableCalcMethod === 'CUSTOM' && (
-          <p className={`${styles.meta} ${customSum !== 100 ? styles.metaWarn : styles.metaOk}`} style={{ marginTop: 2 }}>
-            Weights sum: {customSum}%{customSum !== 100 ? ' — must equal 100%' : ' ✓'}
-          </p>
+          <>
+            <p className={`${styles.meta} ${customSum !== 100 ? styles.metaWarn : styles.metaOk}`} style={{ marginTop: 2 }}>
+              Weights sum: {customSum}%{customSum !== 100 ? ' — must equal 100%' : ' ✓'}
+            </p>
+            <button className={styles.distributeBtn} onClick={distributeCustomPcts}>
+              Distribute equally
+            </button>
+          </>
         )}
 
         <div className={styles.varList}>
@@ -224,7 +266,6 @@ export function SettingsPage() {
               className={[
                 styles.varRow,
                 dragVisual?.from === i ? styles.varRowDragging : '',
-                dragVisual?.to === i && dragVisual.to !== dragVisual.from ? styles.varRowDropTarget : '',
               ].join(' ')}
             >
               <div
@@ -234,32 +275,53 @@ export function SettingsPage() {
                 onPointerUp={handleDragEnd}
                 onPointerCancel={handleDragEnd}
               >⠿</div>
-              <input
-                className={styles.varLabel}
-                value={v.label}
-                onChange={e => updateVariable(v.id, { label: e.target.value })}
-                placeholder="Variable name"
-              />
-              {settings.variableCalcMethod === 'CUSTOM' && (
-                <div className={styles.varStepper}>
+
+              <div className={styles.varTrack}>
+                <div className={styles.varDeleteZone}>
                   <button
-                    className={styles.varStepBtn}
-                    onClick={() => updateVariable(v.id, { customPct: Math.max(0, (v.customPct ?? 0) - 1) })}
-                    disabled={(v.customPct ?? 0) <= 0}
-                  >−</button>
-                  <span className={styles.varStepValue}>{v.customPct ?? 0}%</span>
-                  <button
-                    className={styles.varStepBtn}
-                    onClick={() => updateVariable(v.id, { customPct: Math.min(100, (v.customPct ?? 0) + 1) })}
-                    disabled={(v.customPct ?? 0) >= 100}
-                  >+</button>
+                    className={styles.varDeleteBtn}
+                    onClick={() => { setSwipeOpenId(null); removeVariable(v.id) }}
+                  >Delete</button>
                 </div>
-              )}
-              <button
-                className={styles.removeBtn}
-                onClick={() => removeVariable(v.id)}
-                aria-label="Remove variable"
-              >×</button>
+                <div
+                  className={[
+                    styles.varContent,
+                    dragVisual?.to === i && dragVisual.to !== dragVisual.from ? styles.varContentDropTarget : '',
+                  ].join(' ')}
+                  style={{ transform: swipeOpenId === v.id ? 'translateX(-72px)' : 'translateX(0)' }}
+                  onPointerDown={e => onContentDown(e, v.id)}
+                  onPointerMove={onContentMove}
+                  onPointerUp={onContentUp}
+                  onPointerCancel={() => { swipeRef.current = null }}
+                >
+                  <div className={styles.varLabelWrap}>
+                    <input
+                      className={styles.varLabel}
+                      value={v.label}
+                      onChange={e => updateVariable(v.id, { label: e.target.value })}
+                      placeholder="Variable name"
+                    />
+                    {v.label && (
+                      <button className={styles.varLabelClear} onClick={() => updateVariable(v.id, { label: '' })}>×</button>
+                    )}
+                  </div>
+                  {settings.variableCalcMethod === 'CUSTOM' && (
+                    <div className={styles.varStepper}>
+                      <button
+                        className={styles.varStepBtn}
+                        onClick={() => updateVariable(v.id, { customPct: Math.max(0, (v.customPct ?? 0) - 1) })}
+                        disabled={(v.customPct ?? 0) <= 0}
+                      >−</button>
+                      <span className={styles.varStepValue}>{v.customPct ?? 0}%</span>
+                      <button
+                        className={styles.varStepBtn}
+                        onClick={() => updateVariable(v.id, { customPct: Math.min(100, (v.customPct ?? 0) + 1) })}
+                        disabled={(v.customPct ?? 0) >= 100}
+                      >+</button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -273,16 +335,20 @@ export function SettingsPage() {
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>Recovery email</h2>
         <p className={styles.meta}>Used to recover your settings with a magic link if you switch devices.</p>
-        <input
-          className={styles.textInput}
-          style={{ marginTop: 8 }}
-          type="email"
-          inputMode="email"
-          autoComplete="email"
-          placeholder="your@email.com"
-          value={recoveryEmail}
-          onChange={e => setRecoveryEmail(e.target.value)}
-        />
+        <div className={styles.textInputWrap} style={{ marginTop: 8 }}>
+          <input
+            className={styles.textInput}
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            placeholder="your@email.com"
+            value={recoveryEmail}
+            onChange={e => setRecoveryEmail(e.target.value)}
+          />
+          {recoveryEmail && (
+            <button className={styles.textInputClear} onClick={() => setRecoveryEmail('')}>×</button>
+          )}
+        </div>
       </div>
 
       {/* Legal */}
