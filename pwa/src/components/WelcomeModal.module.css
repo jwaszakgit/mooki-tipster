@@ -1,0 +1,110 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal {
+  background: var(--color-bg);
+  border-radius: 20px;
+  padding: 32px 24px 28px;
+  max-width: 360px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
+  animation: slideUp 0.25s ease;
+}
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.logoWord { font-size: 22px; line-height: 1; }
+.logoM    { font-weight: 600; color: var(--color-brand); font-family: var(--font); }
+.logoRest { font-weight: 400; color: var(--color-text); font-family: var(--font); }
+
+.body {
+  font-size: 15px;
+  color: var(--color-text);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.bold {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.checkLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--color-text);
+  line-height: 1.5;
+  margin: 16px 0 4px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.checkbox {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--color-brand);
+  cursor: pointer;
+}
+
+.link {
+  color: var(--color-brand);
+  text-decoration: underline;
+}
+
+.once {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-style: italic;
+  text-align: center;
+}
+
+.button {
+  margin-top: 4px;
+  width: 100%;
+  padding: 15px;
+  border-radius: var(--radius);
+  background: var(--color-brand);
+  color: white;
+  font-size: 17px;
+  font-weight: 600;
+  font-family: var(--font);
+  transition: opacity 0.15s;
+}
+
+.button:active  { opacity: 0.85; }
+.button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}

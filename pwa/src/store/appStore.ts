@@ -40,6 +40,7 @@ interface AppState {
   deviceId: string | null
   page: Page
   settings: TipSettings
+  recoveryEmail: string
 
   // Home page session state — persists across settings navigation, not saved to IDB
   billText: string
@@ -53,6 +54,7 @@ interface AppState {
   removeVariable: (id: string) => void
   updateVariable: (id: string, patch: Partial<Pick<TipVariable, 'label' | 'customPct'>>) => void
   reorderVariables: (fromIndex: number, toIndex: number) => void
+  setRecoveryEmail: (email: string) => void
   setBillText: (text: string) => void
   setLikert: (id: string, value: number) => void
   setSplitBy: (n: number) => void
@@ -86,6 +88,7 @@ function getSerializableState(state: AppState) {
   return {
     deviceId: state.deviceId,
     settings: state.settings,
+    recoveryEmail: state.recoveryEmail,
   }
 }
 
@@ -95,6 +98,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   deviceId: null,
   page: 'home',
   settings: makeDefaultSettings(),
+  recoveryEmail: '',
 
   billText: '',
   likertRatings: {},
@@ -112,6 +116,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         set({
           deviceId,
           settings: persisted.settings ?? makeDefaultSettings(),
+          recoveryEmail: persisted.recoveryEmail ?? '',
         })
       } else {
         set({ deviceId })
@@ -170,6 +175,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     const updated = { ...settings, variables }
     set({ settings: updated })
     saveLocalData(getSerializableState({ ...get(), settings: updated }))
+  },
+
+  setRecoveryEmail: (email) => {
+    set({ recoveryEmail: email })
+    saveLocalData(getSerializableState({ ...get(), recoveryEmail: email }))
   },
 
   setBillText: (text) => set({ billText: text }),

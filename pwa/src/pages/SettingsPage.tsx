@@ -22,6 +22,8 @@ export function SettingsPage() {
     removeVariable,
     updateVariable,
     reorderVariables,
+    recoveryEmail,
+    setRecoveryEmail,
   } = useAppStore()
 
   const [confirmed, setConfirmed] = useState(false)
@@ -265,6 +267,33 @@ export function SettingsPage() {
         {settings.variables.length < 7 && (
           <button className={styles.addBtn} onClick={addVariable}>+ Add variable</button>
         )}
+      </div>
+
+      {/* Recovery Email */}
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>Recovery email</h2>
+        <p className={styles.meta}>Used to recover your settings with a magic link if you switch devices.</p>
+        <input
+          className={styles.textInput}
+          style={{ marginTop: 8 }}
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          placeholder="your@email.com"
+          value={recoveryEmail}
+          onChange={e => setRecoveryEmail(e.target.value)}
+        />
+      </div>
+
+      {/* Legal */}
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>Legal</h2>
+        <button className={styles.legalBtn} onClick={() => window.open('https://www.mooki-apps.com/terms', '_blank')}>
+          Terms of Service
+        </button>
+        <button className={styles.legalBtn} onClick={() => window.open('https://www.mooki-apps.com/privacy', '_blank')}>
+          Privacy Policy
+        </button>
       </div>
 
       {/* Reset */}
