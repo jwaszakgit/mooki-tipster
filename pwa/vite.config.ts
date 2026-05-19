@@ -12,8 +12,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
       },
       manifest: {
-        name: 'mooki tipster',
-        short_name: 'mooki',
+        name: 'mooki Tipster',
+        short_name: 'Tipster',
         description: 'mooki tipster — your personal betting companion',
         theme_color: '#378ADD',
         background_color: '#ffffff',
