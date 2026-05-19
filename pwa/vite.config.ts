@@ -14,7 +14,7 @@ export default defineConfig({
       manifest: {
         name: 'mooki Tipster',
         short_name: 'Tipster',
-        description: 'mooki tipster — your personal betting companion',
+        description: 'mooki Tipster — your conscientous tipping companion',
         theme_color: '#378ADD',
         background_color: '#ffffff',
         display: 'standalone',

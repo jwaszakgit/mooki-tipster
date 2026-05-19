@@ -376,7 +376,7 @@ export function SettingsPage() {
       {(installState === 'android' || installState === 'ios') && (
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Install app</h2>
-          <p className={styles.meta}>Add mooki tipster to your home screen for quick access.</p>
+          <p className={styles.meta}>Add mooki Tipster to your home screen for quick access.</p>
           <button
             className={styles.installBtn}
             onClick={() => installState === 'android' ? promptInstall() : setShowInstallModal(true)}
@@ -410,7 +410,7 @@ export function SettingsPage() {
       </div>
 
       <div className={styles.footer}>
-        <p>mooki tipster — Simple apps for a simple life.™</p>
+        <p>mooki Tipster — Simple apps for a simple life.™</p>
         <p style={{ marginTop: 4 }}>No account. No tracking. No fuss.</p>
       </div>
 
