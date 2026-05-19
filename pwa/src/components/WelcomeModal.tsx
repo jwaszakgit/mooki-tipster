@@ -20,10 +20,7 @@ export function WelcomeModal({ onAccept }: Props) {
         </div>
 
         <p className={styles.body}>
-          Rate your service and calculate the perfect tip — instantly and privately.
-        </p>
-        <p className={styles.bold}>
-          Your settings and ratings stay on your device. No account or login needed.
+          Rate your service and calculate the perfect tip.
         </p>
 
         <label className={styles.checkLabel}>

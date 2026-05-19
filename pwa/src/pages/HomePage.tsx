@@ -91,7 +91,7 @@ export function HomePage() {
       <header className={styles.header}>
         <div className={styles.brand}>
           <span className={styles.brandM}>m</span>
-          <span className={styles.brandRest}>ooki tipster</span>
+          <span className={styles.brandRest}>ooki Tipster</span>
         </div>
         <button className={styles.gear} onClick={() => setPage('settings')} aria-label="Settings">
           ⚙️
