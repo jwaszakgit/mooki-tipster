@@ -1,0 +1,13 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.pageSlot {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}

@@ -12,10 +12,10 @@ export function WelcomeModal({ onAccept }: Props) {
     <div className={styles.overlay}>
       <div className={styles.modal}>
         <div className={styles.logo}>
-          <img src="/icons/icon-192.png" width="56" height="56" style={{ borderRadius: 14 }} alt="mooki tipster" />
+          <img src="/icons/icon-192.png" width="56" height="56" style={{ borderRadius: 14 }} alt="mooki Tipster" />
           <div className={styles.logoWord}>
             <span className={styles.logoM}>m</span>
-            <span className={styles.logoRest}>ooki tipster</span>
+            <span className={styles.logoRest}>ooki Tipster</span>
           </div>
         </div>
 

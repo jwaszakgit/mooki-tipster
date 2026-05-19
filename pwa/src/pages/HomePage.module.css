@@ -299,7 +299,24 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  opacity: 0.65;
+  opacity: 0.55;
+  cursor: default;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
+}
+
+.saveBtnActive {
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+  color: white;
+  opacity: 1;
+  cursor: pointer;
+}
+
+.saveBtnOpen {
+  background: var(--color-brand-light);
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+  opacity: 0.7;
   cursor: default;
 }
 
@@ -314,15 +331,69 @@
   color: var(--color-text-muted);
 }
 
-.tooltip {
-  margin-top: 6px;
-  text-align: center;
-  font-size: 13px;
-  color: var(--color-text-muted);
+/* ── Success modal ───────────────────────────────── */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 24px;
+}
+
+.modal {
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
+  border-radius: var(--radius);
+  padding: 32px 24px 24px;
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+  animation: modalPop 0.2s ease-out;
+}
+
+@keyframes modalPop {
+  from { transform: scale(0.88); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+.modalEmoji {
+  font-size: 36px;
+  letter-spacing: 4px;
+  margin-bottom: 16px;
+  animation: modalDance 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes modalDance {
+  from { transform: rotate(-6deg) scale(1);    }
+  to   { transform: rotate( 6deg) scale(1.08); }
+}
+
+.modalTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+
+.modalSub {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  margin-bottom: 24px;
+}
+
+.modalDismiss {
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: var(--radius);
+  background: var(--color-brand);
+  border: none;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: var(--font);
 }
 
 /* ── Bottom padding ──────────────────────────────── */

@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react'
 import { useAppStore } from './store/appStore'
 import { HomePage } from './pages/HomePage'
 import { SettingsPage } from './pages/SettingsPage'
+import { MyVisitsPage } from './pages/MyVisitsPage'
+import { CommunityPage } from './pages/CommunityPage'
+import { BottomNav } from './components/BottomNav'
 import { WelcomeModal } from './components/WelcomeModal'
+import styles from './App.module.css'
 
 const WELCOMED_KEY = 'mooki_tipster_welcomed'
 
@@ -20,9 +24,15 @@ export default function App() {
   }
 
   return (
-    <>
-      {page === 'settings' ? <SettingsPage /> : <HomePage />}
+    <div className={styles.shell}>
+      <div className={styles.pageSlot}>
+        {page === 'home'       && <HomePage />}
+        {page === 'settings'   && <SettingsPage />}
+        {page === 'my-visits'  && <MyVisitsPage />}
+        {page === 'community'  && <CommunityPage />}
+      </div>
+      <BottomNav />
       {showWelcome && <WelcomeModal onAccept={handleAccept} />}
-    </>
+    </div>
   )
 }

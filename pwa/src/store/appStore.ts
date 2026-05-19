@@ -3,7 +3,7 @@ import { getLocalData, saveLocalData } from '../services/localStore'
 
 export type Currency = 'USD' | 'GBP' | 'CAD' | 'EUR'
 export type VariableCalcMethod = 'EQUAL' | 'CUSTOM'
-export type Page = 'home' | 'settings'
+export type Page = 'home' | 'settings' | 'my-visits' | 'community'
 
 // ── Defaults — change here to update everywhere ─────────────────────────────
 
@@ -47,8 +47,12 @@ interface AppState {
   likertRatings: Record<string, number>
   splitBy: number
 
+  // Cross-page navigation state
+  saveSharePrefill: string | null
+
   initDevice: () => void
   setPage: (page: Page) => void
+  setSaveSharePrefill: (term: string | null) => void
   updateSettings: (patch: Partial<TipSettings>) => void
   addVariable: () => void
   removeVariable: (id: string) => void
@@ -59,6 +63,7 @@ interface AppState {
   setBillText: (text: string) => void
   setLikert: (id: string, value: number) => void
   setSplitBy: (n: number) => void
+  resetHomeForm: () => void
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -104,6 +109,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   billText: '',
   likertRatings: {},
   splitBy: 1,
+  saveSharePrefill: null,
 
   initDevice: () => {
     let deviceId = localStorage.getItem('mooki_tipster_device_id')
@@ -189,6 +195,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     saveLocalData(getSerializableState({ ...get(), recoveryEmail: email }))
   },
 
+  setSaveSharePrefill: (term) => set({ saveSharePrefill: term }),
+
   setBillText: (text) => set({ billText: text }),
 
   setLikert: (id, value) => set(state => ({
@@ -196,4 +204,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   })),
 
   setSplitBy: (n) => set({ splitBy: n }),
+
+  resetHomeForm: () => set({ billText: '', likertRatings: {}, splitBy: 1 }),
 }))

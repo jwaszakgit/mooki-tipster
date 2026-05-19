@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAppStore } from '../store/appStore'
 import { calculateTip, formatCurrency } from '../services/tipCalculator'
 import type { Currency } from '../store/appStore'
+import { SaveSharePanel } from '../components/SaveSharePanel'
 import styles from './HomePage.module.css'
 
 const LIKERT_EMOJI = ['😢', '😑', '😐', '🙂', '😁'] as const
@@ -20,15 +21,23 @@ export function HomePage() {
     billText, setBillText,
     likertRatings, setLikert,
     splitBy, setSplitBy,
+    resetHomeForm,
   } = useAppStore()
 
-  const [showTooltip, setShowTooltip] = useState(false)
-  const [billFocused, setBillFocused] = useState(false)
-  const tooltipTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [billFocused,   setBillFocused]   = useState(false)
+  const [showSavePanel, setShowSavePanel] = useState(false)
+  const [showModal,     setShowModal]     = useState(false)
 
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  // Scroll the panel into view after it renders
   useEffect(() => {
-    return () => { if (tooltipTimer.current) clearTimeout(tooltipTimer.current) }
-  }, [])
+    if (!showSavePanel) return
+    const t = setTimeout(() => {
+      panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 50)
+    return () => clearTimeout(t)
+  }, [showSavePanel])
 
   // billText stores raw digit characters; decimal is implied at 2 places from right
   const bill = billText ? parseInt(billText) / 100 : 0
@@ -61,9 +70,18 @@ export function HomePage() {
     : null
 
   function handleSaveShare() {
-    if (tooltipTimer.current) clearTimeout(tooltipTimer.current)
-    setShowTooltip(true)
-    tooltipTimer.current = setTimeout(() => setShowTooltip(false), 2500)
+    if (!hasAmount || showSavePanel) return
+    setShowSavePanel(true)
+  }
+
+  function handleSaveSuccess(_message: string) {
+    setShowModal(true)
+  }
+
+  function handleModalDismiss() {
+    setShowModal(false)
+    setShowSavePanel(false)
+    resetHomeForm()
   }
 
   const symbol = CURRENCY_SYMBOL[settings.currency]
@@ -202,15 +220,41 @@ export function HomePage() {
 
         {/* Save & Share */}
         <div className={styles.saveWrap}>
-          <button className={styles.saveBtn} onClick={handleSaveShare}>
+          <button
+            className={`${styles.saveBtn} ${hasAmount && !showSavePanel ? styles.saveBtnActive : ''} ${showSavePanel ? styles.saveBtnOpen : ''}`}
+            onClick={handleSaveShare}
+            disabled={!hasAmount || showSavePanel}
+          >
             Save &amp; Share
-            <span className={styles.saveBadge}>Coming Soon</span>
+            {!hasAmount && <span className={styles.saveBadge}>Add a bill amount first</span>}
           </button>
-          {showTooltip && <p className={styles.tooltip}>Rating sharing coming soon.</p>}
         </div>
+
+        {/* Save & Share panel — expands below button, scroll reveals naturally */}
+        {showSavePanel && (
+          <div ref={panelRef}>
+            <SaveSharePanel result={result} onSuccess={handleSaveSuccess} />
+          </div>
+        )}
 
         <div className={styles.bottomPad} />
       </div>
+
+      {/* Success modal */}
+      {showModal && (
+        <div className={styles.modalOverlay} onClick={handleModalDismiss}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalEmoji} aria-hidden="true">
+              🥳🎊🎉🎊🥳
+            </div>
+            <p className={styles.modalTitle}>Thanks for sharing!</p>
+            <p className={styles.modalSub}>Your rating helps the community.</p>
+            <button className={styles.modalDismiss} onClick={handleModalDismiss}>
+              Done
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
