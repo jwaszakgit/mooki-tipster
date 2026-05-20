@@ -8,6 +8,19 @@ import styles from './MyVisitsPage.module.css'
 type SortBy = 'restaurantName' | 'visitedAt' | 'avgServiceRating' | 'avgSupplementalRating'
 type Order  = 'asc' | 'desc'
 
+interface VariableRating {
+  defaultMatchKey: string | null
+  likertValue:     number
+}
+
+interface SupplementalRating {
+  foodQuality:  number
+  foodValue:    number
+  drinkQuality: number
+  drinkValue:   number
+  vibe:         number
+}
+
 interface Visit {
   id:                    string
   visitedAt:             string
@@ -15,13 +28,30 @@ interface Visit {
   restaurant:            { name: string; address1: string; city: string; region: string } | null
   avgServiceRating:      number | null
   avgSupplementalRating: number | undefined
+  variableRatings:       VariableRating[]
+  supplementalRating:    SupplementalRating | null
 }
 
 const SORT_OPTIONS: { value: SortBy; label: string }[] = [
   { value: 'visitedAt',             label: 'Date'        },
   { value: 'restaurantName',        label: 'Restaurant'  },
   { value: 'avgServiceRating',      label: 'Service'     },
-  { value: 'avgSupplementalRating', label: 'Experience'  },
+  { value: 'avgSupplementalRating', label: 'The Spread'  },
+]
+
+const SERVICE_ITEMS = [
+  { key: 'friendly_engaging', label: 'Friendly & Engaging' },
+  { key: 'order_accuracy',    label: 'Ordering'            },
+  { key: 'pace',              label: 'Pace'                },
+  { key: 'bill_processing',   label: 'Billing'             },
+]
+
+const SPREAD_ITEMS: { key: keyof SupplementalRating; label: string }[] = [
+  { key: 'foodQuality',  label: 'Food quality'  },
+  { key: 'foodValue',    label: 'Food value'    },
+  { key: 'drinkQuality', label: 'Drink quality' },
+  { key: 'drinkValue',   label: 'Drink value'   },
+  { key: 'vibe',         label: 'Vibe'          },
 ]
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -91,13 +121,9 @@ export function MyVisitsPage() {
           </button>
         </div>
 
-        {/* Loading */}
         {loading && <p className={styles.stateMsg}>Loading…</p>}
-
-        {/* Error */}
         {!loading && error && <p className={styles.errorMsg}>{error}</p>}
 
-        {/* Empty state */}
         {!loading && !error && visits.length === 0 && (
           <div className={styles.empty}>
             <p className={styles.emptyMsg}>
@@ -127,22 +153,48 @@ export function MyVisitsPage() {
 
             <div className={styles.cardRatings}>
               {visit.avgServiceRating != null && (
-                <div className={styles.ratingRow}>
-                  <span className={styles.ratingLabel}>Service</span>
-                  <RatingPips value={visit.avgServiceRating} />
-                  <span className={styles.ratingNum}>
-                    {visit.avgServiceRating.toFixed(1)}
-                  </span>
-                </div>
+                <>
+                  <div className={styles.ratingRow}>
+                    <span className={styles.ratingLabel}>Service</span>
+                    <RatingPips value={visit.avgServiceRating} />
+                    <span className={styles.ratingNum}>
+                      {visit.avgServiceRating.toFixed(1)}
+                    </span>
+                  </div>
+                  {SERVICE_ITEMS.map(item => {
+                    const vr = visit.variableRatings?.find(r => r.defaultMatchKey === item.key)
+                    if (!vr) return null
+                    return (
+                      <div key={item.key} className={styles.ratingSubRow}>
+                        <span className={styles.ratingSubLabel}>{item.label}</span>
+                        <RatingPips value={vr.likertValue} size="sm" />
+                        <span className={styles.ratingSubNum}>{vr.likertValue.toFixed(1)}</span>
+                      </div>
+                    )
+                  })}
+                </>
               )}
               {visit.avgSupplementalRating != null && (
-                <div className={styles.ratingRow}>
-                  <span className={styles.ratingLabel}>Experience</span>
-                  <RatingPips value={visit.avgSupplementalRating} />
-                  <span className={styles.ratingNum}>
-                    {visit.avgSupplementalRating.toFixed(1)}
-                  </span>
-                </div>
+                <>
+                  <div className={styles.ratingRow}>
+                    <span className={styles.ratingLabel}>The Spread</span>
+                    <RatingPips value={visit.avgSupplementalRating} />
+                    <span className={styles.ratingNum}>
+                      {visit.avgSupplementalRating.toFixed(1)}
+                    </span>
+                  </div>
+                  {visit.supplementalRating && SPREAD_ITEMS.map(item => {
+                    const val = visit.supplementalRating![item.key]
+                    if (!val || val === 0) return null
+                    return (
+                      <div key={item.key} className={styles.ratingSubRow}>
+                        <span className={styles.ratingSubLabel}>{item.label}</span>
+                        <RatingPips value={val} size="sm" />
+                        <span className={styles.ratingSubNum}>{val.toFixed(1)}</span>
+                      </div>
+                    )
+                  })}
+                </>
               )}
             </div>
           </div>

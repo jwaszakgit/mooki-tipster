@@ -13,6 +13,19 @@ interface CommunityRatings {
   visitCount:            number
   tipPctFinal:           number | null
   lastVisitAt:           string | null
+  serviceBreakdown?: {
+    friendly_engaging: number | null
+    order_accuracy:    number | null
+    pace:              number | null
+    bill_processing:   number | null
+  }
+  spreadBreakdown?: {
+    foodQuality:  number | null
+    foodValue:    number | null
+    drinkQuality: number | null
+    drinkValue:   number | null
+    vibe:         number | null
+  }
 }
 
 interface RestaurantResult {
@@ -28,7 +41,22 @@ const SORT_OPTIONS: { value: SortBy; label: string }[] = [
   { value: 'lastVisitAt',           label: 'Last Visit'  },
   { value: 'restaurantName',        label: 'Restaurant'  },
   { value: 'avgServiceRating',      label: 'Service'     },
-  { value: 'avgSupplementalRating', label: 'Experience'  },
+  { value: 'avgSupplementalRating', label: 'The Spread'  },
+]
+
+const SERVICE_ITEMS = [
+  { key: 'friendly_engaging' as const, label: 'Friendly & Engaging' },
+  { key: 'order_accuracy'    as const, label: 'Ordering'            },
+  { key: 'pace'              as const, label: 'Pace'                },
+  { key: 'bill_processing'   as const, label: 'Billing'             },
+]
+
+const SPREAD_ITEMS = [
+  { key: 'foodQuality'  as const, label: 'Food quality'  },
+  { key: 'foodValue'    as const, label: 'Food value'    },
+  { key: 'drinkQuality' as const, label: 'Drink quality' },
+  { key: 'drinkValue'   as const, label: 'Drink value'   },
+  { key: 'vibe'         as const, label: 'Vibe'          },
 ]
 
 function formatDate(iso: string | null): string {
@@ -126,18 +154,13 @@ export function CommunityPage() {
           </div>
         )}
 
-        {/* Loading */}
         {loading && <p className={styles.stateMsg}>Loading…</p>}
+        {error   && <p className={styles.errorMsg}>{error}</p>}
 
-        {/* Error */}
-        {error && <p className={styles.errorMsg}>{error}</p>}
-
-        {/* Empty DB */}
         {hasData && results.length === 0 && (
           <p className={styles.stateMsg}>No community data yet — share a visit to be the first!</p>
         )}
 
-        {/* No filter match */}
         {hasData && results.length > 0 && sorted.length === 0 && (
           <p className={styles.stateMsg}>No restaurants match your filters.</p>
         )}
@@ -195,22 +218,48 @@ export function CommunityPage() {
 
             <div className={styles.cardRatings}>
               {r.community.avgServiceRating != null && (
-                <div className={styles.ratingRow}>
-                  <span className={styles.ratingLabel}>Service</span>
-                  <RatingPips value={r.community.avgServiceRating} />
-                  <span className={styles.ratingNum}>
-                    {r.community.avgServiceRating.toFixed(1)}
-                  </span>
-                </div>
+                <>
+                  <div className={styles.ratingRow}>
+                    <span className={styles.ratingLabel}>Service</span>
+                    <RatingPips value={r.community.avgServiceRating} />
+                    <span className={styles.ratingNum}>
+                      {r.community.avgServiceRating.toFixed(1)}
+                    </span>
+                  </div>
+                  {r.community.serviceBreakdown && SERVICE_ITEMS.map(item => {
+                    const val = r.community.serviceBreakdown![item.key]
+                    if (val == null) return null
+                    return (
+                      <div key={item.key} className={styles.ratingSubRow}>
+                        <span className={styles.ratingSubLabel}>{item.label}</span>
+                        <RatingPips value={val} size="sm" />
+                        <span className={styles.ratingSubNum}>{val.toFixed(1)}</span>
+                      </div>
+                    )
+                  })}
+                </>
               )}
               {r.community.avgSupplementalRating != null && (
-                <div className={styles.ratingRow}>
-                  <span className={styles.ratingLabel}>Experience</span>
-                  <RatingPips value={r.community.avgSupplementalRating} />
-                  <span className={styles.ratingNum}>
-                    {r.community.avgSupplementalRating.toFixed(1)}
-                  </span>
-                </div>
+                <>
+                  <div className={styles.ratingRow}>
+                    <span className={styles.ratingLabel}>The Spread</span>
+                    <RatingPips value={r.community.avgSupplementalRating} />
+                    <span className={styles.ratingNum}>
+                      {r.community.avgSupplementalRating.toFixed(1)}
+                    </span>
+                  </div>
+                  {r.community.spreadBreakdown && SPREAD_ITEMS.map(item => {
+                    const val = r.community.spreadBreakdown![item.key]
+                    if (val == null) return null
+                    return (
+                      <div key={item.key} className={styles.ratingSubRow}>
+                        <span className={styles.ratingSubLabel}>{item.label}</span>
+                        <RatingPips value={val} size="sm" />
+                        <span className={styles.ratingSubNum}>{val.toFixed(1)}</span>
+                      </div>
+                    )
+                  })}
+                </>
               )}
             </div>
           </div>

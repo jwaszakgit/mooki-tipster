@@ -249,7 +249,7 @@ export function SaveSharePanel({ result, onSuccess, initialSearch }: Props) {
 
       {/* Supplemental survey */}
       <section className={styles.card}>
-        <p className={styles.cardLabel}>Your experience</p>
+        <p className={styles.cardLabel}>The Spread</p>
         <p className={styles.cardHint}>Rate what applies — leave anything that doesn't apply unrated.</p>
         <div className={styles.suppList}>
           {SUPP_FIELDS.map(({ key, label }) => (
