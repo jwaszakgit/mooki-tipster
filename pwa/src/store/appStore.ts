@@ -50,7 +50,11 @@ interface AppState {
   // Cross-page navigation state
   saveSharePrefill: string | null
 
-  initDevice: () => void
+  // Last saved visit location — persisted for heartbeat analytics
+  lastVisitLatitude: number | null
+  lastVisitLongitude: number | null
+
+  initDevice: () => Promise<void>
   setPage: (page: Page) => void
   setSaveSharePrefill: (term: string | null) => void
   updateSettings: (patch: Partial<TipSettings>) => void
@@ -64,6 +68,7 @@ interface AppState {
   setLikert: (id: string, value: number) => void
   setSplitBy: (n: number) => void
   resetHomeForm: () => void
+  setLastVisitLocation: (lat: number | null, lng: number | null) => void
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -95,6 +100,8 @@ function getSerializableState(state: AppState) {
     deviceId: state.deviceId,
     settings: state.settings,
     recoveryEmail: state.recoveryEmail,
+    lastVisitLatitude: state.lastVisitLatitude,
+    lastVisitLongitude: state.lastVisitLongitude,
   }
 }
 
@@ -110,6 +117,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   likertRatings: {},
   splitBy: 1,
   saveSharePrefill: null,
+  lastVisitLatitude: null,
+  lastVisitLongitude: null,
 
   initDevice: () => {
     let deviceId = localStorage.getItem('mooki_tipster_device_id')
@@ -117,13 +126,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       deviceId = crypto.randomUUID()
       localStorage.setItem('mooki_tipster_device_id', deviceId)
     }
-    getLocalData().then(data => {
+    return getLocalData().then(data => {
       const persisted = data as Partial<ReturnType<typeof getSerializableState>> | null
       if (persisted) {
         set({
           deviceId,
           settings: persisted.settings ?? makeDefaultSettings(),
           recoveryEmail: persisted.recoveryEmail ?? '',
+          lastVisitLatitude: persisted.lastVisitLatitude ?? null,
+          lastVisitLongitude: persisted.lastVisitLongitude ?? null,
         })
       } else {
         set({ deviceId })
@@ -206,4 +217,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSplitBy: (n) => set({ splitBy: n }),
 
   resetHomeForm: () => set({ billText: '', likertRatings: {}, splitBy: 1 }),
+
+  setLastVisitLocation: (lat, lng) => {
+    set({ lastVisitLatitude: lat, lastVisitLongitude: lng })
+    saveLocalData(getSerializableState({ ...get(), lastVisitLatitude: lat, lastVisitLongitude: lng }))
+  },
 }))

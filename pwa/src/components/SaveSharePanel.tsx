@@ -82,7 +82,7 @@ function parsePlaceResult(place: any): PlaceData | null {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function SaveSharePanel({ result, onSuccess, initialSearch }: Props) {
-  const { deviceId, settings, likertRatings, splitBy, billText } = useAppStore()
+  const { deviceId, settings, likertRatings, splitBy, billText, setLastVisitLocation } = useAppStore()
   const { ready: googleReady, error: googleError } = useGooglePlaces()
 
   const [placeData,   setPlaceData]   = useState<PlaceData | null>(null)
@@ -199,6 +199,7 @@ export function SaveSharePanel({ result, onSuccess, initialSearch }: Props) {
         throw new Error((body as any).error ?? `Server error (${res.status})`)
       }
 
+      setLastVisitLocation(placeData.lat, placeData.lng)
       onSuccess('Visit saved!')
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Something went wrong')

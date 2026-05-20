@@ -20,7 +20,7 @@ export function WelcomeModal({ onAccept }: Props) {
         </div>
 
         <p className={styles.body}>
-          Rate your service and calculate the perfect tip.
+          Tipster objectively answers the question, "What should I put for a tip?". Track your experiences over time and tap into the community for consistent restaurant ratings.
         </p>
 
         <label className={styles.checkLabel}>
