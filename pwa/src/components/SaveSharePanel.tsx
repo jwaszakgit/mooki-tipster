@@ -18,8 +18,6 @@ const SUPP_FIELDS = [
 
 type SuppKey = typeof SUPP_FIELDS[number]['key']
 
-// Client-side mapping from the app's default variable labels to canonical API match keys.
-// Handles label text divergence between the client defaults and the server canonical names.
 const LABEL_TO_MATCH_KEY: Record<string, string> = {
   'friendly and engaging':        'friendly_engaging',
   'order experience and results': 'order_accuracy',
@@ -54,30 +52,30 @@ interface Props {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+// Parses a Place object from the new google.maps.places.PlaceAutocompleteElement API.
+// Field names changed in the new API: long_name→longText, short_name→shortText,
+// place_id→id, name→displayName, geometry.location→location.
 function parsePlaceResult(place: any): PlaceData | null {
-  if (!place.address_components || !place.geometry?.location) return null
+  if (!place.addressComponents || !place.location) return null
 
-  const get = (type: string, nameType: 'short_name' | 'long_name' = 'long_name'): string => {
-    const comp = (place.address_components as any[]).find((c: any) => c.types.includes(type))
+  const get = (type: string, nameType: 'longText' | 'shortText' = 'longText'): string => {
+    const comp = (place.addressComponents as any[]).find((c: any) => c.types.includes(type))
     return comp?.[nameType] ?? ''
   }
 
-  const streetNumber = get('street_number')
-  const route        = get('route')
-  const address1     = [streetNumber, route].filter(Boolean).join(' ')
-  const subpremise   = get('subpremise')
+  const address1 = [get('street_number'), get('route')].filter(Boolean).join(' ')
 
   return {
-    googlePlaceId:  place.place_id  ?? '',
-    restaurantName: place.name      ?? '',
-    address1:       address1 || '',
-    address2:       subpremise || null,
+    googlePlaceId:  place.id              ?? '',
+    restaurantName: place.displayName     ?? '',
+    address1:       address1              || '',
+    address2:       get('subpremise')     || null,
     city:           get('locality'),
-    region:         get('administrative_area_level_1', 'short_name'),
+    region:         get('administrative_area_level_1', 'shortText'),
     postalCode:     get('postal_code'),
     country:        get('country'),
-    lat:            place.geometry.location.lat(),
-    lng:            place.geometry.location.lng(),
+    lat:            place.location.lat(),
+    lng:            place.location.lng(),
   }
 }
 
@@ -93,46 +91,64 @@ export function SaveSharePanel({ result, onSuccess, initialSearch }: Props) {
   const [submitting,  setSubmitting]  = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  const inputRef        = useRef<HTMLInputElement>(null)
+  // Container div that PlaceAutocompleteElement is appended into.
+  const containerRef    = useRef<HTMLDivElement>(null)
   const autocompleteRef = useRef<any>(null)
 
   useEffect(() => {
-    if (!googleReady || !inputRef.current) return
+    if (!googleReady || !containerRef.current) return
 
-    const g  = (window as any).google
-    const el = inputRef.current
+    const g         = (window as any).google
+    const container = containerRef.current
+    const pac       = new g.maps.places.PlaceAutocompleteElement({ types: ['establishment'] })
 
-    const ac = new g.maps.places.Autocomplete(el, {
-      types:  ['establishment'],
-      fields: ['place_id', 'name', 'address_components', 'geometry'],
-    })
+    // Pre-populate for the Community "Be the first to rate" flow.
+    // The element's input lives in its shadow DOM; requestAnimationFrame lets
+    // it render before we reach in.
+    if (initialSearch) {
+      requestAnimationFrame(() => {
+        const inner = pac.shadowRoot?.querySelector('input')
+        if (inner) {
+          inner.value = initialSearch
+          inner.dispatchEvent(new Event('input', { bubbles: true }))
+        }
+      })
+    }
 
-    // Pre-populate from Community "Be the first to rate" flow
-    if (initialSearch) el.value = initialSearch
-
-    ac.addListener('place_changed', () => {
-      const parsed = parsePlaceResult(ac.getPlace())
-      if (parsed) {
-        setPlaceData(parsed)
-        setPlaceError(null)
-      } else {
+    const handleSelect = async (event: any) => {
+      const place = event.placePrediction.toPlace()
+      try {
+        await place.fetchFields({ fields: ['id', 'displayName', 'addressComponents', 'location'] })
+        const parsed = parsePlaceResult(place)
+        if (parsed) {
+          setPlaceData(parsed)
+          setPlaceError(null)
+        } else {
+          setPlaceData(null)
+          setPlaceError('Could not retrieve address details — please try a different selection.')
+        }
+      } catch {
         setPlaceData(null)
         setPlaceError('Could not retrieve address details — please try a different selection.')
       }
-    })
+    }
 
-    // Clear confirmed place whenever the user edits the input manually
+    // input events from the shadow DOM's <input> are composed:true and bubble out.
     const handleInput = () => {
       setPlaceData(null)
       setPlaceError(null)
     }
-    el.addEventListener('input', handleInput)
 
-    autocompleteRef.current = ac
+    pac.addEventListener('gmp-select', handleSelect)
+    pac.addEventListener('input', handleInput)
+    container.appendChild(pac)
+    autocompleteRef.current = pac
 
     return () => {
-      if (autocompleteRef.current) g.maps.event.clearInstanceListeners(autocompleteRef.current)
-      el.removeEventListener('input', handleInput)
+      pac.removeEventListener('gmp-select', handleSelect)
+      pac.removeEventListener('input', handleInput)
+      if (container.contains(pac)) container.removeChild(pac)
+      autocompleteRef.current = null
     }
   }, [googleReady])
 
@@ -202,14 +218,15 @@ export function SaveSharePanel({ result, onSuccess, initialSearch }: Props) {
           <p className={styles.apiError}>
             Places search unavailable — check VITE_GOOGLE_PLACES_KEY.
           </p>
-        ) : (
+        ) : !googleReady ? (
           <input
-            ref={inputRef}
             className={styles.searchInput}
             type="text"
-            placeholder={googleReady ? 'Search for a restaurant…' : 'Loading search…'}
-            disabled={!googleReady}
+            placeholder="Loading search…"
+            disabled
           />
+        ) : (
+          <div ref={containerRef} className={styles.searchContainer} />
         )}
 
         {placeError && <p className={styles.placeError}>{placeError}</p>}

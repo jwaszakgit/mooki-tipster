@@ -23,6 +23,22 @@
 
 /* ── Restaurant search ───────────────────────────── */
 
+/* Container for PlaceAutocompleteElement — CSS custom properties pierce
+   the shadow DOM so the element's internal input matches our design. */
+.searchContainer {
+  width: 100%;
+}
+
+.searchContainer gmp-placeautocomplete {
+  width: 100%;
+  --gmp-color-surface:    var(--color-bg);
+  --gmp-color-on-surface: var(--color-text);
+  --gmp-color-primary:    var(--color-brand);
+  --gmp-color-outline:    var(--color-border);
+  --gmp-font-family:      var(--font);
+}
+
+/* Shown only while the Maps script is still loading */
 .searchInput {
   width: 100%;
   padding: 10px 12px;
