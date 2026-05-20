@@ -1,48 +1,39 @@
 import { useEffect, useState } from 'react'
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader'
 
 type GoogleStatus = 'idle' | 'loading' | 'ready' | 'error'
+
+let loaderPromise: Promise<void> | null = null
+
+function loadPlacesLibrary(key: string): Promise<void> {
+  if (loaderPromise) return loaderPromise
+
+  setOptions({ key, v: 'weekly' })
+
+  loaderPromise = importLibrary('places')
+    .then(() => {})
+    .catch((err: unknown) => {
+      loaderPromise = null  // allow retry on next mount
+      throw err
+    })
+
+  return loaderPromise
+}
 
 export function useGooglePlaces() {
   const [status, setStatus] = useState<GoogleStatus>('idle')
 
   useEffect(() => {
-    if ((window as any).google?.maps?.places?.PlaceAutocompleteElement) {
-      setStatus('ready')
-      return
-    }
-
     const key = import.meta.env.VITE_GOOGLE_PLACES_KEY
-    if (!key) {
-      setStatus('error')
-      return
-    }
+    if (!key) { setStatus('error'); return }
 
-    // Script already injected by a previous mount — attach to its events
-    const existing = document.getElementById('gmp-script') as HTMLScriptElement | null
-    if (existing) {
-      setStatus('loading')
-      const onLoad  = () => setStatus('ready')
-      const onError = () => setStatus('error')
-      existing.addEventListener('load', onLoad)
-      existing.addEventListener('error', onError)
-      return () => {
-        existing.removeEventListener('load', onLoad)
-        existing.removeEventListener('error', onError)
-      }
-    }
-
+    let cancelled = false
     setStatus('loading')
-    const script = document.createElement('script')
-    script.id    = 'gmp-script'
-    // loading=async suppresses the "loaded without loading=async" warning.
-    // &libraries=places bundles the places library so PlaceAutocompleteElement
-    // is available on load without needing importLibrary.
-    script.src   = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&loading=async`
-    script.async = true
-    script.defer = true
-    script.onload  = () => setStatus('ready')
-    script.onerror = () => setStatus('error')
-    document.head.appendChild(script)
+    loadPlacesLibrary(key)
+      .then(() => { if (!cancelled) setStatus('ready') })
+      .catch(() => { if (!cancelled) setStatus('error') })
+
+    return () => { cancelled = true }
   }, [])
 
   return {
