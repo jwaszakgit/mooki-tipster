@@ -27,11 +27,15 @@ jobs:
         working-directory: pwa
         run: npm ci
 
+      - name: Create .env
+        working-directory: pwa
+        run: |
+          echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" > .env
+          echo "VITE_GOOGLE_PLACES_KEY=${{ secrets.VITE_GOOGLE_PLACES_KEY }}" >> .env
+
       - name: Build
         working-directory: pwa
         run: npm run build
-        env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
       - name: Deploy to Azure Static Web Apps
         uses: azure/static-web-apps-deploy@v1
