@@ -32,8 +32,10 @@ interface Visit {
   supplementalRating:    SupplementalRating | null
 }
 
+const LIMIT = 20
+
 const SORT_OPTIONS: { value: SortBy; label: string }[] = [
-  { value: 'visitedAt',             label: 'Date'        },
+  { value: 'visitedAt',             label: 'Last Visit'  },
   { value: 'restaurantName',        label: 'Restaurant'  },
   { value: 'avgServiceRating',      label: 'Service'     },
   { value: 'avgSupplementalRating', label: 'The Spread'  },
@@ -66,30 +68,72 @@ function formatDate(iso: string): string {
 export function MyVisitsPage() {
   const { deviceId } = useAppStore()
 
-  const [visits,  setVisits]  = useState<Visit[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState<string | null>(null)
-  const [sortBy,  setSortBy]  = useState<SortBy>('visitedAt')
-  const [order,   setOrder]   = useState<Order>('desc')
+  const [visits,      setVisits]      = useState<Visit[]>([])
+  const [total,       setTotal]       = useState(0)
+  const [offset,      setOffset]      = useState(0)
+  const [loading,     setLoading]     = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [error,       setError]       = useState<string | null>(null)
+  const [sortBy,      setSortBy]      = useState<SortBy>('visitedAt')
+  const [order,       setOrder]       = useState<Order>('desc')
+
+  const apiUrl = import.meta.env.VITE_API_URL as string | undefined
 
   useEffect(() => {
-    if (!deviceId) return
+    fetchPage('visitedAt', 'desc', 0, false)
+  }, [deviceId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    const apiUrl = import.meta.env.VITE_API_URL
+  async function fetchPage(sb: SortBy, ord: Order, fetchOffset: number, append: boolean) {
+    if (!deviceId) return
     if (!apiUrl) { setError('API URL not configured'); return }
 
-    setLoading(true)
-    setError(null)
+    if (append) {
+      setLoadingMore(true)
+    } else {
+      setLoading(true)
+      setError(null)
+    }
 
-    fetch(`${apiUrl}/api/v1/tipster/visits/${deviceId}?sortBy=${sortBy}&order=${order}`)
-      .then(res => {
-        if (!res.ok) throw new Error(`Error ${res.status}`)
-        return res.json()
+    try {
+      const params = new URLSearchParams({
+        sortBy: sb, order: ord,
+        limit: String(LIMIT), offset: String(fetchOffset),
       })
-      .then((data: Visit[]) => setVisits(data))
-      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load visits'))
-      .finally(() => setLoading(false))
-  }, [deviceId, sortBy, order])
+      const res = await fetch(`${apiUrl}/api/v1/tipster/visits/${deviceId}?${params}`)
+      if (!res.ok) throw new Error(`Error ${res.status}`)
+      const data: { visits: Visit[]; total: number; offset: number } = await res.json()
+
+      if (append) {
+        setVisits(prev => [...prev, ...data.visits])
+      } else {
+        setVisits(data.visits)
+      }
+      setTotal(data.total)
+      setOffset(fetchOffset)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load visits')
+    } finally {
+      if (append) setLoadingMore(false)
+      else        setLoading(false)
+    }
+  }
+
+  function handleSortBy(newSortBy: SortBy) {
+    setSortBy(newSortBy)
+    fetchPage(newSortBy, order, 0, false)
+  }
+
+  function handleOrder() {
+    const newOrder: Order = order === 'asc' ? 'desc' : 'asc'
+    setOrder(newOrder)
+    fetchPage(sortBy, newOrder, 0, false)
+  }
+
+  function handleLoadMore() {
+    fetchPage(sortBy, order, visits.length, true)
+  }
+
+  const showLoadMore = !loading && total > offset + visits.length
 
   return (
     <div className={styles.container}>
@@ -105,16 +149,18 @@ export function MyVisitsPage() {
             {SORT_OPTIONS.map(opt => (
               <button
                 key={opt.value}
+                type="button"
                 className={`${styles.sortChip} ${sortBy === opt.value ? styles.sortChipActive : ''}`}
-                onClick={() => setSortBy(opt.value)}
+                onClick={() => handleSortBy(opt.value)}
               >
                 {opt.label}
               </button>
             ))}
           </div>
           <button
+            type="button"
             className={styles.orderBtn}
-            onClick={() => setOrder(o => o === 'asc' ? 'desc' : 'asc')}
+            onClick={handleOrder}
             aria-label={order === 'asc' ? 'Sort descending' : 'Sort ascending'}
           >
             {order === 'asc' ? '↑' : '↓'}
@@ -199,6 +245,20 @@ export function MyVisitsPage() {
             </div>
           </div>
         ))}
+
+        {/* Load More */}
+        {showLoadMore && (
+          <div className={styles.loadMoreWrap}>
+            <button
+              type="button"
+              className={styles.loadMoreBtn}
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+            >
+              {loadingMore ? 'Loading…' : 'Load More'}
+            </button>
+          </div>
+        )}
 
         <div className={styles.bottomPad} />
       </div>
