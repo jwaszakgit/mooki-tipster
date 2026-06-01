@@ -70,6 +70,17 @@ export function SettingsPage() {
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
+        // 409 means the email is already registered — check if it belongs to
+        // this device (local state fell out of sync) or a different one (recovery needed)
+        if (res.status === 409) {
+          const statusRes  = await fetch(`${apiUrl}/api/v1/tipster/email/status?deviceId=${deviceId}`)
+          const statusBody = await statusRes.json()
+          if (statusBody.verified) {
+            useAppStore.getState().setRecoveryEmailVerified(true)
+            setEmailSendStatus('idle')
+            return
+          }
+        }
         throw new Error((body as any).error ?? 'Failed to send')
       }
       setEmailSendStatus('sent')
