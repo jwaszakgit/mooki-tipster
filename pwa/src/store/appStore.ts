@@ -3,7 +3,7 @@ import { getLocalData, saveLocalData } from '../services/localStore'
 
 export type Currency = 'USD' | 'GBP' | 'CAD' | 'EUR'
 export type VariableCalcMethod = 'EQUAL' | 'CUSTOM'
-export type Page = 'home' | 'settings' | 'my-visits' | 'community'
+export type Page = 'home' | 'settings' | 'my-visits' | 'community' | 'email-verify' | 'recover'
 
 // ── Defaults — change here to update everywhere ─────────────────────────────
 
@@ -36,11 +36,47 @@ export interface TipSettings {
   variables: TipVariable[]
 }
 
+export interface VisitPayload {
+  deviceId: string
+  googlePlaceId: string
+  restaurantName: string
+  address1: string
+  address2: string | null
+  city: string
+  region: string
+  postalCode: string
+  country: string
+  lat: number
+  lng: number
+  billAmount: number
+  currency: Currency
+  splitBy: number
+  tipPctFinal: number
+  tipAmountFinal: number
+  variableRatings: Array<{
+    labelAtTime: string
+    defaultMatchKey: string | null
+    likertValue: number
+    pctContribution: number
+  }>
+  supplementalRating?: {
+    foodQuality: number
+    foodValue: number
+    drinkQuality: number
+    drinkValue: number
+    vibe: number
+  }
+}
+
 interface AppState {
   deviceId: string | null
   page: Page
   settings: TipSettings
   recoveryEmail: string
+  recoveryEmailVerified: boolean
+
+  // Pending visit held locally until email is verified (capture-then-verify)
+  pendingVisit: VisitPayload | null
 
   // Home page session state — persists across settings navigation, not saved to IDB
   billText: string
@@ -64,6 +100,10 @@ interface AppState {
   reorderVariables: (fromIndex: number, toIndex: number) => void
   resetSettings: () => void
   setRecoveryEmail: (email: string) => void
+  setRecoveryEmailVerified: (verified: boolean) => void
+  setPendingVisit: (visit: VisitPayload | null) => void
+  setDeviceId: (id: string) => void
+  resyncEmailState: () => Promise<void>
   setBillText: (text: string) => void
   setLikert: (id: string, value: number) => void
   setSplitBy: (n: number) => void
@@ -100,6 +140,8 @@ function getSerializableState(state: AppState) {
     deviceId: state.deviceId,
     settings: state.settings,
     recoveryEmail: state.recoveryEmail,
+    recoveryEmailVerified: state.recoveryEmailVerified,
+    pendingVisit: state.pendingVisit,
     lastVisitLatitude: state.lastVisitLatitude,
     lastVisitLongitude: state.lastVisitLongitude,
   }
@@ -112,6 +154,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   page: 'home',
   settings: makeDefaultSettings(),
   recoveryEmail: '',
+  recoveryEmailVerified: false,
+  pendingVisit: null,
 
   billText: '',
   likertRatings: {},
@@ -133,6 +177,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           deviceId,
           settings: persisted.settings ?? makeDefaultSettings(),
           recoveryEmail: persisted.recoveryEmail ?? '',
+          recoveryEmailVerified: persisted.recoveryEmailVerified ?? false,
+          pendingVisit: persisted.pendingVisit ?? null,
           lastVisitLatitude: persisted.lastVisitLatitude ?? null,
           lastVisitLongitude: persisted.lastVisitLongitude ?? null,
         })
@@ -197,13 +243,51 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   resetSettings: () => {
     const defaults = makeDefaultSettings()
-    set({ settings: defaults, recoveryEmail: '' })
-    saveLocalData(getSerializableState({ ...get(), settings: defaults, recoveryEmail: '' }))
+    set({ settings: defaults, recoveryEmail: '', recoveryEmailVerified: false, pendingVisit: null })
+    saveLocalData(getSerializableState({
+      ...get(),
+      settings: defaults,
+      recoveryEmail: '',
+      recoveryEmailVerified: false,
+      pendingVisit: null,
+    }))
   },
 
+  // Changing the email resets verification — user must re-verify
   setRecoveryEmail: (email) => {
-    set({ recoveryEmail: email })
-    saveLocalData(getSerializableState({ ...get(), recoveryEmail: email }))
+    const next = { recoveryEmail: email, recoveryEmailVerified: false }
+    set(next)
+    saveLocalData(getSerializableState({ ...get(), ...next }))
+  },
+
+  setRecoveryEmailVerified: (verified) => {
+    set({ recoveryEmailVerified: verified })
+    saveLocalData(getSerializableState({ ...get(), recoveryEmailVerified: verified }))
+  },
+
+  setPendingVisit: (visit) => {
+    set({ pendingVisit: visit })
+    saveLocalData(getSerializableState({ ...get(), pendingVisit: visit }))
+  },
+
+  // Re-reads only email fields from IDB — used for cross-tab sync via storage event
+  resyncEmailState: async () => {
+    const data = await getLocalData()
+    const persisted = data as Partial<ReturnType<typeof getSerializableState>> | null
+    if (persisted) {
+      set({
+        recoveryEmail:         persisted.recoveryEmail         ?? '',
+        recoveryEmailVerified: persisted.recoveryEmailVerified ?? false,
+      })
+    }
+  },
+
+  // Used during device recovery — overwrites deviceId in localStorage, store, and IDB
+  setDeviceId: (id) => {
+    localStorage.setItem('mooki_tipster_device_id', id)
+    const next = { deviceId: id, recoveryEmailVerified: true }
+    set(next)
+    saveLocalData(getSerializableState({ ...get(), ...next }))
   },
 
   setSaveSharePrefill: (term) => set({ saveSharePrefill: term }),

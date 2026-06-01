@@ -4,6 +4,8 @@ import { HomePage } from './pages/HomePage'
 import { SettingsPage } from './pages/SettingsPage'
 import { MyVisitsPage } from './pages/MyVisitsPage'
 import { CommunityPage } from './pages/CommunityPage'
+import { EmailVerifyPage } from './pages/EmailVerifyPage'
+import { RecoverPage } from './pages/RecoverPage'
 import { BottomNav } from './components/BottomNav'
 import { WelcomeModal } from './components/WelcomeModal'
 import styles from './App.module.css'
@@ -40,13 +42,25 @@ async function sendHeartbeatIfNeeded() {
 }
 
 export default function App() {
-  const { page, initDevice } = useAppStore()
+  const { page, setPage, initDevice, resyncEmailState } = useAppStore()
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem(WELCOMED_KEY))
 
   useEffect(() => {
     initDevice().then(() => {
+      // Route to deep-link pages when the app is opened via a magic link
+      const path = window.location.pathname
+      if (path === '/email-verify') setPage('email-verify')
+      else if (path === '/recover') setPage('recover')
       sendHeartbeatIfNeeded()
     })
+
+    // Cross-tab sync: when another tab in the same browser verifies the email,
+    // re-read the email fields from IDB so this tab reflects the new state.
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'mooki_tipster_email_verified') resyncEmailState()
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
   }, [])
 
   function handleAccept() {
@@ -54,16 +68,20 @@ export default function App() {
     setShowWelcome(false)
   }
 
+  const isDeepLink = page === 'email-verify' || page === 'recover'
+
   return (
     <div className={styles.shell}>
       <div className={styles.pageSlot}>
-        {page === 'home'       && <HomePage />}
-        {page === 'settings'   && <SettingsPage />}
-        {page === 'my-visits'  && <MyVisitsPage />}
-        {page === 'community'  && <CommunityPage />}
+        {page === 'home'         && <HomePage />}
+        {page === 'settings'     && <SettingsPage />}
+        {page === 'my-visits'    && <MyVisitsPage />}
+        {page === 'community'    && <CommunityPage />}
+        {page === 'email-verify' && <EmailVerifyPage />}
+        {page === 'recover'      && <RecoverPage />}
       </div>
-      <BottomNav />
-      {showWelcome && <WelcomeModal onAccept={handleAccept} />}
+      {!isDeepLink && <BottomNav />}
+      {showWelcome && !isDeepLink && <WelcomeModal onAccept={handleAccept} />}
     </div>
   )
 }

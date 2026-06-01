@@ -5,6 +5,8 @@ import { AddToHomeModal } from '../components/AddToHomeModal'
 import type { Currency, TipVariable } from '../store/appStore'
 import styles from './SettingsPage.module.css'
 
+type EmailSendStatus = 'idle' | 'sending' | 'sent' | 'error'
+
 const CURRENCY_OPTIONS: { value: Currency; label: string; symbol: string }[] = [
   { value: 'USD', label: 'USD', symbol: '$' },
   { value: 'GBP', label: 'GBP', symbol: '£' },
@@ -26,6 +28,7 @@ export function SettingsPage() {
   const {
     settings,
     setPage,
+    deviceId,
     updateSettings,
     addVariable,
     removeVariable,
@@ -34,6 +37,7 @@ export function SettingsPage() {
     resetSettings,
     recoveryEmail,
     setRecoveryEmail,
+    recoveryEmailVerified,
   } = useAppStore()
 
   const [confirmed, setConfirmed] = useState(false)
@@ -48,6 +52,52 @@ export function SettingsPage() {
 
   // Swipe-to-delete state
   const [swipeOpenId, setSwipeOpenId] = useState<string | null>(null)
+
+  // Recovery email verification
+  const [emailSendStatus,  setEmailSendStatus]  = useState<EmailSendStatus>('idle')
+  const [emailSendError,   setEmailSendError]    = useState('')
+  const [checkingStatus,   setCheckingStatus]    = useState(false)
+
+  async function handleSendVerifyEmail() {
+    const apiUrl = import.meta.env.VITE_API_URL
+    setEmailSendStatus('sending')
+    setEmailSendError('')
+    try {
+      const res = await fetch(`${apiUrl}/api/v1/tipster/email/request`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ deviceId, email: recoveryEmail }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error((body as any).error ?? 'Failed to send')
+      }
+      setEmailSendStatus('sent')
+    } catch (err) {
+      setEmailSendError(err instanceof Error ? err.message : 'Could not send. Please try again.')
+      setEmailSendStatus('error')
+    }
+  }
+
+  async function handleCheckVerification() {
+    if (!deviceId) return
+    const apiUrl = import.meta.env.VITE_API_URL
+    setCheckingStatus(true)
+    try {
+      const res  = await fetch(`${apiUrl}/api/v1/tipster/email/status?deviceId=${deviceId}`)
+      const body = await res.json()
+      if (body.verified) {
+        useAppStore.getState().setRecoveryEmailVerified(true)
+        setEmailSendStatus('idle')
+      } else {
+        setEmailSendError("Not verified yet — check your inbox and click the link first.")
+      }
+    } catch {
+      setEmailSendError('Could not check status. Please try again.')
+    } finally {
+      setCheckingStatus(false)
+    }
+  }
   const swipeRef = useRef<{ id: string; startX: number; startY: number; active: boolean; cancelled: boolean } | null>(null)
 
   function handleReset() {
@@ -349,7 +399,10 @@ export function SettingsPage() {
       {/* Recovery Email */}
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>Recovery email</h2>
-        <p className={styles.meta}>Used to recover your settings with a magic link if you switch devices.</p>
+        {recoveryEmailVerified
+          ? <p className={styles.meta}><span className={styles.metaOk}>Verified</span>{recoveryEmail ? ` — ${recoveryEmail}` : ''}</p>
+          : <p className={styles.meta}>Set an email to recover your data if you switch devices.</p>
+        }
         <div className={styles.textInputWrap} style={{ marginTop: 8 }}>
           <input
             className={styles.textInput}
@@ -358,7 +411,7 @@ export function SettingsPage() {
             autoComplete="email"
             placeholder="your@email.com"
             value={recoveryEmail}
-            onChange={e => setRecoveryEmail(e.target.value)}
+            onChange={e => { setRecoveryEmail(e.target.value); setEmailSendStatus('idle') }}
             onFocus={() => setFocusedInput('email')}
             onBlur={() => setFocusedInput(null)}
           />
@@ -366,11 +419,55 @@ export function SettingsPage() {
             <button
               className={styles.textInputClear}
               onMouseDown={e => e.preventDefault()}
-              onClick={() => setRecoveryEmail('')}
+              onClick={() => { setRecoveryEmail(''); setEmailSendStatus('idle') }}
             >×</button>
           )}
         </div>
+        {!recoveryEmailVerified && recoveryEmail && emailSendStatus !== 'sent' && (
+          <button
+            className={styles.installBtn}
+            style={{ marginTop: 8 }}
+            onClick={handleSendVerifyEmail}
+            disabled={emailSendStatus === 'sending'}
+          >
+            {emailSendStatus === 'sending' ? 'Sending…' : 'Send verification link'}
+          </button>
+        )}
+        {emailSendStatus === 'sent' && (
+          <>
+            <p className={styles.meta} style={{ marginTop: 8 }}>
+              Check your inbox and click the link, then tap below.
+            </p>
+            <button
+              className={styles.installBtn}
+              style={{ marginTop: 8 }}
+              onClick={handleCheckVerification}
+              disabled={checkingStatus}
+            >
+              {checkingStatus ? 'Checking…' : 'I clicked the link — confirm verification'}
+            </button>
+          </>
+        )}
+        {emailSendError && (
+          <p className={styles.meta} style={{ marginTop: 8, color: 'var(--color-red)' }}>
+            {emailSendError}
+          </p>
+        )}
       </div>
+
+      {/* Recover from another device */}
+      {!recoveryEmailVerified && (
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>New device?</h2>
+          <p className={styles.meta}>Already have Tipster data? Recover it from your other device.</p>
+          <button
+            className={styles.legalBtn}
+            onClick={() => setPage('recover')}
+          >
+            Recover data from another device
+          </button>
+        </div>
+      )}
 
       {/* Install app */}
       {(installState === 'android' || installState === 'ios') && (

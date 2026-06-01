@@ -82,14 +82,25 @@ function parsePlaceResult(place: any): PlaceData | null {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function SaveSharePanel({ result, onSuccess, initialSearch }: Props) {
-  const { deviceId, settings, likertRatings, splitBy, billText, setLastVisitLocation } = useAppStore()
+  const {
+    deviceId,
+    settings,
+    likertRatings,
+    splitBy,
+    billText,
+    setLastVisitLocation,
+    recoveryEmail,
+    recoveryEmailVerified,
+    setPendingVisit,
+  } = useAppStore()
   const { ready: googleReady, error: googleError } = useGooglePlaces()
 
-  const [placeData,   setPlaceData]   = useState<PlaceData | null>(null)
-  const [placeError,  setPlaceError]  = useState<string | null>(null)
-  const [suppRatings, setSuppRatings] = useState<Record<SuppKey, number>>({ ...DEFAULT_SUPP })
-  const [submitting,  setSubmitting]  = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [placeData,         setPlaceData]         = useState<PlaceData | null>(null)
+  const [placeError,        setPlaceError]         = useState<string | null>(null)
+  const [suppRatings,       setSuppRatings]        = useState<Record<SuppKey, number>>({ ...DEFAULT_SUPP })
+  const [submitting,        setSubmitting]         = useState(false)
+  const [submitError,       setSubmitError]        = useState<string | null>(null)
+  const [emailCaptureSent,  setEmailCaptureSent]   = useState(false)
 
   // Container div that PlaceAutocompleteElement is appended into.
   const containerRef    = useRef<HTMLDivElement>(null)
@@ -154,6 +165,27 @@ export function SaveSharePanel({ result, onSuccess, initialSearch }: Props) {
 
   const bill = billText ? parseInt(billText) / 100 : 0
 
+  function buildPayload() {
+    const variableRatings = settings.variables.map((v, i) => ({
+      labelAtTime:     v.label || `Variable ${v.sortOrder + 1}`,
+      defaultMatchKey: LABEL_TO_MATCH_KEY[v.label.toLowerCase().trim()] ?? null,
+      likertValue:     likertRatings[v.id] ?? 3,
+      pctContribution: result.perVariableContribution[i]?.pctContribution ?? 0,
+    }))
+    const hasAnySuppRating = Object.values(suppRatings).some(v => v > 0)
+    return {
+      deviceId:       deviceId!,
+      ...placeData!,
+      billAmount:     bill,
+      currency:       settings.currency,
+      splitBy,
+      tipPctFinal:    result.tipPctFinal,
+      tipAmountFinal: result.tipAmountFinal,
+      variableRatings,
+      ...(hasAnySuppRating ? { supplementalRating: suppRatings } : {}),
+    }
+  }
+
   async function handleSubmit() {
     if (!placeData || !deviceId) return
 
@@ -163,35 +195,44 @@ export function SaveSharePanel({ result, onSuccess, initialSearch }: Props) {
       return
     }
 
+    // ── Capture-then-verify gate ──────────────────────────────────────────────
+    if (!recoveryEmailVerified) {
+      if (!recoveryEmail) {
+        setSubmitError('Go to Settings and set a recovery email before saving your first rating.')
+        return
+      }
+      setSubmitting(true)
+      setSubmitError(null)
+      try {
+        setPendingVisit(buildPayload())
+        const res = await fetch(`${apiUrl}/api/v1/tipster/email/request`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ deviceId, email: recoveryEmail }),
+        })
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}))
+          throw new Error((body as any).error ?? 'Could not send verification email.')
+        }
+        setEmailCaptureSent(true)
+      } catch (err) {
+        setPendingVisit(null)
+        setSubmitError(err instanceof Error ? err.message : 'Could not send verification email.')
+      } finally {
+        setSubmitting(false)
+      }
+      return
+    }
+
+    // ── Normal submit ─────────────────────────────────────────────────────────
     setSubmitting(true)
     setSubmitError(null)
 
     try {
-      const variableRatings = settings.variables.map((v, i) => ({
-        labelAtTime:     v.label || `Variable ${v.sortOrder + 1}`,
-        defaultMatchKey: LABEL_TO_MATCH_KEY[v.label.toLowerCase().trim()] ?? null,
-        likertValue:     likertRatings[v.id] ?? 3,
-        pctContribution: result.perVariableContribution[i]?.pctContribution ?? 0,
-      }))
-
-      const hasAnySuppRating = Object.values(suppRatings).some(v => v > 0)
-
-      const payload = {
-        deviceId,
-        ...placeData,
-        billAmount:     bill,
-        currency:       settings.currency,
-        splitBy,
-        tipPctFinal:    result.tipPctFinal,
-        tipAmountFinal: result.tipAmountFinal,
-        variableRatings,
-        ...(hasAnySuppRating ? { supplementalRating: suppRatings } : {}),
-      }
-
       const res = await fetch(`${apiUrl}/api/v1/tipster/visits`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(payload),
+        body:    JSON.stringify(buildPayload()),
       })
 
       if (!res.ok) {
@@ -278,14 +319,26 @@ export function SaveSharePanel({ result, onSuccess, initialSearch }: Props) {
       </section>
 
       {/* Error + Submit */}
-      {submitError && <p className={styles.submitError}>{submitError}</p>}
-      <button
-        className={`${styles.submitBtn} ${(!placeData || submitting) ? styles.submitDisabled : ''}`}
-        onClick={handleSubmit}
-        disabled={!placeData || submitting}
-      >
-        {submitting ? 'Saving…' : 'Submit'}
-      </button>
+      {emailCaptureSent ? (
+        <div className={styles.emailCaptureBox}>
+          <p className={styles.emailCaptureTitle}>Check your inbox</p>
+          <p className={styles.emailCaptureSub}>
+            We sent a verification link to <strong>{recoveryEmail}</strong>.
+            Click it and your rating will be saved automatically.
+          </p>
+        </div>
+      ) : (
+        <>
+          {submitError && <p className={styles.submitError}>{submitError}</p>}
+          <button
+            className={`${styles.submitBtn} ${(!placeData || submitting) ? styles.submitDisabled : ''}`}
+            onClick={handleSubmit}
+            disabled={!placeData || submitting}
+          >
+            {submitting ? 'Saving…' : 'Submit'}
+          </button>
+        </>
+      )}
 
     </div>
   )

@@ -181,3 +181,27 @@
   opacity: 0.4;
   cursor: default;
 }
+
+/* ── Email capture (pending verification) ────── */
+
+.emailCaptureBox {
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--color-brand-light);
+  border: 1px solid var(--color-brand);
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.emailCaptureTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 6px;
+}
+
+.emailCaptureSub {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
