@@ -6,8 +6,8 @@ export function RecoverPage() {
   const { setPage, setDeviceId } = useAppStore()
 
   // Capture once at mount — replaceState later clears the URL so we can't re-read it
-  const [token]     = useState(() => new URLSearchParams(window.location.search).get('token'))
-  const [sessionId] = useState(() => new URLSearchParams(window.location.search).get('sessionId'))
+  const [token]      = useState(() => new URLSearchParams(window.location.search).get('token'))
+  const [claimToken] = useState(() => new URLSearchParams(window.location.search).get('claimToken'))
 
   // ── Token mode (deep link from email) ──────────────────────────────────────
 
@@ -23,15 +23,16 @@ export function RecoverPage() {
 
     async function verifyRecovery() {
       try {
-        const qs  = `token=${encodeURIComponent(token!)}${sessionId ? `&sessionId=${encodeURIComponent(sessionId)}` : ''}`
-        const res = await fetch(`${apiUrl}/api/v1/tipster/email/recover/verify?${qs}`)
+        const res = await fetch(
+          `${apiUrl}/api/v1/tipster/email/recover/verify?token=${encodeURIComponent(token!)}&claimToken=${encodeURIComponent(claimToken ?? '')}`,
+        )
         if (!res.ok) {
           const body = await res.json().catch(() => ({}))
           throw new Error((body as any).error ?? `Recovery failed (${res.status})`)
         }
         window.history.replaceState({}, '', '/')
         setTokenStatus('success')
-        setTokenMessage('Recovery initiated. Return to Tipster in your original browser and tap "I clicked the link — restore my data".')
+        setTokenMessage('Recovery confirmed. Return to Tipster in your original browser and tap "I clicked the link — restore my data".')
       } catch (err) {
         setTokenStatus('error')
         setTokenMessage(err instanceof Error ? err.message : 'Recovery failed.')
@@ -77,7 +78,13 @@ export function RecoverPage() {
 
   // ── Manual mode (initiated from Settings) ─────────────────────────────────
 
-  return <RecoverForm onCancel={() => setPage('settings')} onSuccess={() => setPage('home')} setDeviceId={setDeviceId} />
+  return (
+    <RecoverForm
+      onCancel={() => setPage('settings')}
+      onSuccess={() => setPage('home')}
+      setDeviceId={setDeviceId}
+    />
+  )
 }
 
 function RecoverForm({
@@ -92,7 +99,7 @@ function RecoverForm({
   const [email,      setEmail]      = useState('')
   const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const [sendError,  setSendError]  = useState('')
-  const [sessionId,  setSessionId]  = useState<string | null>(null)
+  const [claimToken, setClaimToken] = useState<string | null>(null)
   const [claiming,   setClaiming]   = useState(false)
   const [claimError, setClaimError] = useState('')
 
@@ -107,7 +114,7 @@ function RecoverForm({
         body:    JSON.stringify({ email }),
       })
       const body = await res.json()
-      setSessionId(body.sessionId ?? null)
+      setClaimToken(body.claimToken ?? null)
       setSendStatus('sent')
     } catch {
       setSendError('Could not send. Please check your connection and try again.')
@@ -116,16 +123,16 @@ function RecoverForm({
   }
 
   async function handleClaim() {
-    if (!sessionId) return
+    if (!claimToken) return
     const apiUrl = import.meta.env.VITE_API_URL
     setClaiming(true)
     setClaimError('')
     try {
-      const res  = await fetch(`${apiUrl}/api/v1/tipster/email/recover/claim?sessionId=${encodeURIComponent(sessionId)}`)
+      const res  = await fetch(`${apiUrl}/api/v1/tipster/email/recover/claim?claimToken=${encodeURIComponent(claimToken)}`)
       const body = await res.json()
-      if (!res.ok) throw new Error(body.error ?? 'Session expired.')
+      if (!res.ok) throw new Error(body.error ?? 'Could not restore.')
       if (!body.confirmed) {
-        setClaimError("Not confirmed yet — click the link in your email first, then try again.")
+        setClaimError('Not confirmed yet — click the link in your email first, then try again.')
         return
       }
       setDeviceId(body.deviceId)
