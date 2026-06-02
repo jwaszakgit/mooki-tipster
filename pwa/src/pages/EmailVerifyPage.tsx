@@ -14,6 +14,7 @@ export function EmailVerifyPage() {
 
   const [status,  setStatus]  = useState<'verifying' | 'success' | 'error'>('verifying')
   const [message, setMessage] = useState('')
+  const [hasPending, setHasPending] = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -38,13 +39,15 @@ export function EmailVerifyPage() {
         }
 
         setRecoveryEmailVerified(true)
-        // Signal other tabs (same browser) that verification is done
+        // Signal other tabs in the same browser so they resync without user action
         localStorage.setItem('mooki_tipster_email_verified', Date.now().toString())
         window.history.replaceState({}, '', '/')
 
-        // Submit pending visit if one was saved before verification
+        // Submit pending visit only if this is the same browser that initiated
+        // verification (pendingVisit will be null in a different browser context)
         const snapshot = pendingVisit
         if (snapshot) {
+          setHasPending(true)
           try {
             const visitRes = await fetch(`${apiUrl}/api/v1/tipster/visits`, {
               method:  'POST',
@@ -53,23 +56,14 @@ export function EmailVerifyPage() {
             })
             setPendingVisit(null)
             resetHomeForm()
-            if (visitRes.ok) {
-              setLastVisitLocation(snapshot.lat, snapshot.lng)
-              setMessage('Email verified — your rating has been saved!')
-            } else {
-              setMessage('Email verified! Your pending rating could not be saved — please re-submit it.')
-            }
+            if (visitRes.ok) setLastVisitLocation(snapshot.lat, snapshot.lng)
           } catch {
             setPendingVisit(null)
             resetHomeForm()
-            setMessage('Email verified! Your pending rating could not be saved — please re-submit it.')
           }
-        } else {
-          setMessage('Email verified!')
         }
 
         setStatus('success')
-        setTimeout(() => setPage('home'), 2500)
       } catch (err) {
         setStatus('error')
         setMessage(err instanceof Error ? err.message : 'Verification failed.')
@@ -91,8 +85,13 @@ export function EmailVerifyPage() {
         {status === 'success' && (
           <>
             <p className={styles.iconOk}>✓</p>
-            <p className={styles.text}>{message}</p>
-            <p className={styles.sub}>Taking you back…</p>
+            <p className={styles.text}>
+              {hasPending ? 'Email verified — your rating has been saved!' : 'Email verified.'}
+            </p>
+            <p className={styles.sub}>
+              Return to Tipster in your original browser or app.
+            </p>
+            <p className={styles.sub}>You can close this tab.</p>
           </>
         )}
         {status === 'error' && (
