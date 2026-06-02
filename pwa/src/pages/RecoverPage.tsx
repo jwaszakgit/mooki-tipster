@@ -6,8 +6,7 @@ export function RecoverPage() {
   const { setPage, setDeviceId } = useAppStore()
 
   // Capture once at mount — replaceState later clears the URL so we can't re-read it
-  const [token]      = useState(() => new URLSearchParams(window.location.search).get('token'))
-  const [claimToken] = useState(() => new URLSearchParams(window.location.search).get('claimToken'))
+  const [token] = useState(() => new URLSearchParams(window.location.search).get('token'))
 
   // ── Token mode (deep link from email) ──────────────────────────────────────
 
@@ -24,7 +23,7 @@ export function RecoverPage() {
     async function verifyRecovery() {
       try {
         const res = await fetch(
-          `${apiUrl}/api/v1/tipster/email/recover/verify?token=${encodeURIComponent(token!)}&claimToken=${encodeURIComponent(claimToken ?? '')}`,
+          `${apiUrl}/api/v1/tipster/email/recover/verify?token=${encodeURIComponent(token!)}`,
         )
         if (!res.ok) {
           const body = await res.json().catch(() => ({}))
