@@ -102,7 +102,7 @@ interface AppState {
   setRecoveryEmail: (email: string) => void
   setRecoveryEmailVerified: (verified: boolean) => void
   setPendingVisit: (visit: VisitPayload | null) => void
-  setDeviceId: (id: string) => void
+  setDeviceId: (id: string, recoveryEmail?: string) => void
   resyncEmailState: () => Promise<void>
   setBillText: (text: string) => void
   setLikert: (id: string, value: number) => void
@@ -282,10 +282,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  // Used during device recovery — overwrites deviceId in localStorage, store, and IDB
-  setDeviceId: (id) => {
+  // Used during device recovery — overwrites deviceId in localStorage, store, and IDB.
+  // Pass recoveryEmail to set it atomically with verification so they stay consistent.
+  setDeviceId: (id, recoveryEmail?) => {
     localStorage.setItem('mooki_tipster_device_id', id)
-    const next = { deviceId: id, recoveryEmailVerified: true }
+    const next = {
+      deviceId: id,
+      recoveryEmailVerified: true,
+      ...(recoveryEmail !== undefined ? { recoveryEmail } : {}),
+    }
     set(next)
     saveLocalData(getSerializableState({ ...get(), ...next }))
   },

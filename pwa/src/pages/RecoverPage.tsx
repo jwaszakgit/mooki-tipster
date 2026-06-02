@@ -31,7 +31,7 @@ export function RecoverPage() {
         }
         window.history.replaceState({}, '', '/')
         setTokenStatus('success')
-        setTokenMessage('Recovery confirmed. Return to Tipster in your original browser and tap "I clicked the link — restore my data".')
+        setTokenMessage('Recovery confirmed. Return to Tipster in your original browser or app and tap "I clicked the link — restore my data".')
       } catch (err) {
         setTokenStatus('error')
         setTokenMessage(err instanceof Error ? err.message : 'Recovery failed.')
@@ -134,7 +134,7 @@ function RecoverForm({
         setClaimError('Not confirmed yet — click the link in your email first, then try again.')
         return
       }
-      setDeviceId(body.deviceId)
+      setDeviceId(body.deviceId, email)
       onSuccess()
     } catch (err) {
       setClaimError(err instanceof Error ? err.message : 'Could not restore. Please try again.')
