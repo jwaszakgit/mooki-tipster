@@ -93,7 +93,7 @@ function RecoverForm({
 }: {
   onCancel:    () => void
   onSuccess:   () => void
-  setDeviceId: (id: string) => void
+  setDeviceId: (id: string, recoveryEmail?: string) => void
 }) {
   const [email,      setEmail]      = useState('')
   const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
