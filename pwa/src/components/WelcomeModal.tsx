@@ -23,6 +23,10 @@ export function WelcomeModal({ onAccept }: Props) {
           Tipster objectively answers the question, "What should I put for a tip?". Track your experiences over time and tap into the community for consistent restaurant ratings.
         </p>
 
+        <p className={styles.hint}>
+          Don't forget — you make the rules! Visit <strong>Settings</strong> to personalize your tipping criteria.
+        </p>
+
         <label className={styles.checkLabel}>
           <input
             type="checkbox"
