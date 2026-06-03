@@ -3,7 +3,7 @@ import { getLocalData, saveLocalData } from '../services/localStore'
 
 export type Currency = 'USD' | 'GBP' | 'CAD' | 'EUR'
 export type VariableCalcMethod = 'EQUAL' | 'CUSTOM'
-export type Page = 'home' | 'settings' | 'my-visits' | 'community' | 'email-verify' | 'recover'
+export type Page = 'home' | 'settings' | 'my-visits' | 'community' | 'recover'
 
 // ── Defaults — change here to update everywhere ─────────────────────────────
 

@@ -1,82 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useAppStore } from '../store/appStore'
 import styles from './RecoverPage.module.css'
 
 export function RecoverPage() {
   const { setPage, setDeviceId } = useAppStore()
-
-  // Capture once at mount — replaceState later clears the URL so we can't re-read it
-  const [token] = useState(() => new URLSearchParams(window.location.search).get('token'))
-
-  // ── Token mode (deep link from email) ──────────────────────────────────────
-
-  const [tokenStatus,  setTokenStatus]  = useState<'verifying' | 'success' | 'error' | null>(
-    token ? 'verifying' : null,
-  )
-  const [tokenMessage, setTokenMessage] = useState('')
-
-  useEffect(() => {
-    if (!token) return
-
-    const apiUrl = import.meta.env.VITE_API_URL
-
-    async function verifyRecovery() {
-      try {
-        const res = await fetch(
-          `${apiUrl}/api/v1/tipster/email/recover/verify?token=${encodeURIComponent(token!)}`,
-        )
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}))
-          throw new Error((body as any).error ?? `Recovery failed (${res.status})`)
-        }
-        window.history.replaceState({}, '', '/')
-        setTokenStatus('success')
-        setTokenMessage('Recovery confirmed. Return to Tipster in your original browser or app and tap "I clicked the link — restore my data".')
-      } catch (err) {
-        setTokenStatus('error')
-        setTokenMessage(err instanceof Error ? err.message : 'Recovery failed.')
-      }
-    }
-
-    verifyRecovery()
-  }, [])
-
-  if (token) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.card}>
-          {tokenStatus === 'verifying' && (
-            <>
-              <div className={styles.spinner} />
-              <p className={styles.text}>Confirming recovery…</p>
-            </>
-          )}
-          {tokenStatus === 'success' && (
-            <>
-              <p className={styles.iconOk}>✓</p>
-              <p className={styles.text}>{tokenMessage}</p>
-              <p className={styles.sub}>You can close this tab.</p>
-            </>
-          )}
-          {tokenStatus === 'error' && (
-            <>
-              <p className={styles.iconErr}>✕</p>
-              <p className={styles.text}>{tokenMessage}</p>
-              <button
-                className={styles.btn}
-                onClick={() => { window.history.replaceState({}, '', '/'); setPage('home') }}
-              >
-                Go to Home
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  // ── Manual mode (initiated from Settings) ─────────────────────────────────
-
   return (
     <RecoverForm
       onCancel={() => setPage('settings')}

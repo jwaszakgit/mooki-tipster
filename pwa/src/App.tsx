@@ -4,7 +4,6 @@ import { HomePage } from './pages/HomePage'
 import { SettingsPage } from './pages/SettingsPage'
 import { MyVisitsPage } from './pages/MyVisitsPage'
 import { CommunityPage } from './pages/CommunityPage'
-import { EmailVerifyPage } from './pages/EmailVerifyPage'
 import { RecoverPage } from './pages/RecoverPage'
 import { BottomNav } from './components/BottomNav'
 import { WelcomeModal } from './components/WelcomeModal'
@@ -47,10 +46,9 @@ export default function App() {
 
   useEffect(() => {
     initDevice().then(() => {
-      // Route to deep-link pages when the app is opened via a magic link
-      const path = window.location.pathname
-      if (path === '/email-verify') setPage('email-verify')
-      else if (path === '/recover') setPage('recover')
+      // Recovery deep-link — magic link now goes directly to the API for both
+      // verify and recover/verify, so only the manual recover page is needed here
+      if (window.location.pathname === '/recover') setPage('recover')
       sendHeartbeatIfNeeded()
     })
 
@@ -68,7 +66,7 @@ export default function App() {
     setShowWelcome(false)
   }
 
-  const isDeepLink = page === 'email-verify' || page === 'recover'
+  const isDeepLink = page === 'recover'
 
   return (
     <div className={styles.shell}>
@@ -77,8 +75,7 @@ export default function App() {
         {page === 'settings'     && <SettingsPage />}
         {page === 'my-visits'    && <MyVisitsPage />}
         {page === 'community'    && <CommunityPage />}
-        {page === 'email-verify' && <EmailVerifyPage />}
-        {page === 'recover'      && <RecoverPage />}
+        {page === 'recover' && <RecoverPage />}
       </div>
       {!isDeepLink && <BottomNav />}
       {showWelcome && !isDeepLink && <WelcomeModal onAccept={handleAccept} />}
