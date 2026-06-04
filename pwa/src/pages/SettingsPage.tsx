@@ -474,18 +474,16 @@ export function SettingsPage() {
       </div>
 
       {/* Recover from another device */}
-      {!recoveryEmailVerified && (
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>New device?</h2>
-          <p className={styles.meta}>Already have Tipster data? Recover it from your other device.</p>
-          <button
-            className={styles.legalBtn}
-            onClick={() => setPage('recover')}
-          >
-            Recover data from another device
-          </button>
-        </div>
-      )}
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>New device?</h2>
+        <p className={styles.meta}>Set up Tipster on another device using your recovery email.</p>
+        <button
+          className={styles.legalBtn}
+          onClick={() => setPage('recover')}
+        >
+          Recover data from another device
+        </button>
+      </div>
 
       {/* Install app */}
       {(installState === 'android' || installState === 'ios') && (
