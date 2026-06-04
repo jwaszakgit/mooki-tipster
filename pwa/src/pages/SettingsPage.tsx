@@ -416,10 +416,10 @@ export function SettingsPage() {
       {/* Recovery Email */}
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>Recovery email</h2>
-        <p className={styles.meta}>Visits and recovery email are stored centrally. Tip settings are saved to this device only.</p>
+        <p className={styles.meta}>Associate new visit data with this email for recovery on any device.</p>
         {recoveryEmailVerified
           ? <p className={styles.meta}><span className={styles.metaOk}>Verified</span>{recoveryEmail ? ` — ${recoveryEmail}` : ''}</p>
-          : <p className={styles.meta}>Set an email to recover your data if you switch devices.</p>
+          : <p className={styles.meta}>Enter an email address below to get started.</p>
         }
         <div className={styles.textInputWrap} style={{ marginTop: 8 }}>
           <input
@@ -475,8 +475,8 @@ export function SettingsPage() {
 
       {/* Recover from another device */}
       <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>New device?</h2>
-        <p className={styles.meta}>Set up Tipster on another device using your recovery email.</p>
+        <h2 className={styles.sectionTitle}>Recover or download visits to this device</h2>
+        <p className={styles.meta}>Replace visit data on this device with data associated with an email address. Verification required.</p>
         <button
           className={styles.legalBtn}
           onClick={() => setPage('recover')}
