@@ -481,7 +481,7 @@ export function SettingsPage() {
           className={styles.legalBtn}
           onClick={() => setPage('recover')}
         >
-          Recover data from another device
+          Recover or download visit data
         </button>
       </div>
 
