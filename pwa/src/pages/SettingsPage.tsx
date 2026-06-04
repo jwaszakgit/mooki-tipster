@@ -410,6 +410,7 @@ export function SettingsPage() {
       {/* Recovery Email */}
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>Recovery email</h2>
+        <p className={styles.meta}>Visits and recovery email are stored centrally. Tip settings are saved to this device only.</p>
         {recoveryEmailVerified
           ? <p className={styles.meta}><span className={styles.metaOk}>Verified</span>{recoveryEmail ? ` — ${recoveryEmail}` : ''}</p>
           : <p className={styles.meta}>Set an email to recover your data if you switch devices.</p>
@@ -518,7 +519,7 @@ export function SettingsPage() {
       </div>
 
       <div className={styles.footer}>
-        <p>mooki Tipster — Simple apps for a simple life.™</p>
+        <p>mooki Tipster — Simple apps for a simpler life.™</p>
         <p style={{ marginTop: 4 }}>No account. No tracking. No fuss.</p>
       </div>
 

@@ -164,28 +164,51 @@ export const useAppStore = create<AppState>((set, get) => ({
   lastVisitLatitude: null,
   lastVisitLongitude: null,
 
-  initDevice: () => {
+  initDevice: async () => {
     let deviceId = localStorage.getItem('mooki_tipster_device_id')
     if (!deviceId) {
       deviceId = crypto.randomUUID()
       localStorage.setItem('mooki_tipster_device_id', deviceId)
     }
-    return getLocalData().then(data => {
-      const persisted = data as Partial<ReturnType<typeof getSerializableState>> | null
-      if (persisted) {
-        set({
-          deviceId,
-          settings: persisted.settings ?? makeDefaultSettings(),
-          recoveryEmail: persisted.recoveryEmail ?? '',
-          recoveryEmailVerified: persisted.recoveryEmailVerified ?? false,
-          pendingVisit: persisted.pendingVisit ?? null,
-          lastVisitLatitude: persisted.lastVisitLatitude ?? null,
-          lastVisitLongitude: persisted.lastVisitLongitude ?? null,
-        })
-      } else {
-        set({ deviceId })
+
+    const data = await getLocalData()
+    const persisted = data as Partial<ReturnType<typeof getSerializableState>> | null
+    if (persisted) {
+      set({
+        deviceId,
+        settings:              persisted.settings              ?? makeDefaultSettings(),
+        recoveryEmail:         persisted.recoveryEmail         ?? '',
+        recoveryEmailVerified: persisted.recoveryEmailVerified ?? false,
+        pendingVisit:          persisted.pendingVisit          ?? null,
+        lastVisitLatitude:     persisted.lastVisitLatitude     ?? null,
+        lastVisitLongitude:    persisted.lastVisitLongitude    ?? null,
+      })
+    } else {
+      set({ deviceId })
+    }
+
+    // Sync recovery email from server — ensures accuracy across browser sessions
+    // where another session may have verified the email. Best-effort: local state
+    // stands if the network call fails.
+    try {
+      const apiUrl = (import.meta as any).env?.VITE_API_URL
+      if (apiUrl) {
+        const res = await fetch(`${apiUrl}/api/v1/tipster/email/me?deviceId=${deviceId}`)
+        if (res.ok) {
+          const { verified, email } = await res.json()
+          if (verified) {
+            const next = {
+              recoveryEmailVerified: true,
+              ...(email ? { recoveryEmail: email as string } : {}),
+            }
+            set(next)
+            saveLocalData(getSerializableState({ ...get(), ...next }))
+          }
+        }
       }
-    })
+    } catch {
+      // silent — local state is the fallback
+    }
   },
 
   setPage: (page) => set({ page }),
