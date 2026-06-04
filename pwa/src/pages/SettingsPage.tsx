@@ -82,13 +82,16 @@ export function SettingsPage() {
           const meRes  = await fetch(`${apiUrl}/api/v1/tipster/email/me?deviceId=${deviceId}`)
           const meBody = await meRes.json()
           if (meBody.verified) {
-            // Sync the actual verified email from the server so the UI shows
-            // the correct address, not whatever was typed in the input
             const store = useAppStore.getState()
             store.setRecoveryEmailVerified(true)
             if (meBody.email) store.setRecoveryEmail(meBody.email)
             store.setRecoveryEmailVerified(true) // re-set after setRecoveryEmail resets it
             setEmailSendStatus('idle')
+            setEmailSendError(
+              meBody.email
+                ? `That email belongs to another account. Your recovery email is already verified as ${meBody.email}.`
+                : 'That email belongs to another account. Your recovery email is already verified on this device.'
+            )
             return
           }
         }
