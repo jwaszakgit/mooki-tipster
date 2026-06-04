@@ -3,6 +3,7 @@ import { useAppStore } from '../store/appStore'
 import { useInstallPrompt } from '../hooks/useInstallPrompt'
 import { AddToHomeModal } from '../components/AddToHomeModal'
 import type { Currency, TipVariable } from '../store/appStore'
+import { isValidEmail } from '../services/emailValidator'
 import styles from './SettingsPage.module.css'
 
 type EmailSendStatus = 'idle' | 'sending' | 'sent' | 'error'
@@ -59,6 +60,11 @@ export function SettingsPage() {
   const [checkingStatus,   setCheckingStatus]    = useState(false)
 
   async function handleSendVerifyEmail() {
+    if (!isValidEmail(recoveryEmail)) {
+      setEmailSendError('Invalid email format.')
+      setEmailSendStatus('error')
+      return
+    }
     const apiUrl = import.meta.env.VITE_API_URL
     setEmailSendStatus('sending')
     setEmailSendError('')

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAppStore } from '../store/appStore'
+import { isValidEmail } from '../services/emailValidator'
 import styles from './RecoverPage.module.css'
 
 export function RecoverPage() {
@@ -30,6 +31,10 @@ function RecoverForm({
   const [claimError, setClaimError] = useState('')
 
   async function handleSend() {
+    if (!isValidEmail(email)) {
+      setSendError('Invalid email format.')
+      return
+    }
     const apiUrl = import.meta.env.VITE_API_URL
     setSendStatus('sending')
     setSendError('')
