@@ -171,7 +171,7 @@ export function CommunityPage() {
           <input
             className={styles.filterInput}
             type="search"
-            placeholder="Search restaurants…"
+            placeholder="Search by name or city…"
             value={inputQ}
             onChange={e => setInputQ(e.target.value)}
             autoComplete="off"
@@ -223,10 +223,6 @@ export function CommunityPage() {
             </div>
 
             <div className={styles.cardStats}>
-              <div className={styles.statItem}>
-                <span className={styles.statLabel}>Visits</span>
-                <span className={styles.statValue}>{r.visitCount}</span>
-              </div>
               <div className={styles.statItem}>
                 <span className={styles.statLabel}>Last Rated On</span>
                 <span className={styles.statValue}>{formatDate(r.lastRatingDate)}</span>

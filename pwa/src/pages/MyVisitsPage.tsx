@@ -30,6 +30,7 @@ interface Visit {
   avgSupplementalRating: number | undefined
   variableRatings:       VariableRating[]
   supplementalRating:    SupplementalRating | null
+  restaurantVisitCount:  number
 }
 
 const LIMIT = 20
@@ -68,6 +69,8 @@ function formatDate(iso: string): string {
 export function MyVisitsPage() {
   const { deviceId } = useAppStore()
 
+  const [inputQ,      setInputQ]      = useState('')
+  const [committedQ,  setCommittedQ]  = useState('')
   const [visits,      setVisits]      = useState<Visit[]>([])
   const [total,       setTotal]       = useState(0)
   const [offset,      setOffset]      = useState(0)
@@ -80,10 +83,10 @@ export function MyVisitsPage() {
   const apiUrl = import.meta.env.VITE_API_URL as string | undefined
 
   useEffect(() => {
-    fetchPage('visitedAt', 'desc', 0, false)
+    fetchPage('', 'visitedAt', 'desc', 0, false)
   }, [deviceId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function fetchPage(sb: SortBy, ord: Order, fetchOffset: number, append: boolean) {
+  async function fetchPage(q: string, sb: SortBy, ord: Order, fetchOffset: number, append: boolean) {
     if (!deviceId) return
     if (!apiUrl) { setError('API URL not configured'); return }
 
@@ -96,7 +99,7 @@ export function MyVisitsPage() {
 
     try {
       const params = new URLSearchParams({
-        sortBy: sb, order: ord,
+        q, sortBy: sb, order: ord,
         limit: String(LIMIT), offset: String(fetchOffset),
       })
       const res = await fetch(`${apiUrl}/api/v1/tipster/visits/${deviceId}?${params}`)
@@ -118,19 +121,25 @@ export function MyVisitsPage() {
     }
   }
 
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault()
+    setCommittedQ(inputQ)
+    fetchPage(inputQ, sortBy, order, 0, false)
+  }
+
   function handleSortBy(newSortBy: SortBy) {
     setSortBy(newSortBy)
-    fetchPage(newSortBy, order, 0, false)
+    fetchPage(committedQ, newSortBy, order, 0, false)
   }
 
   function handleOrder() {
     const newOrder: Order = order === 'asc' ? 'desc' : 'asc'
     setOrder(newOrder)
-    fetchPage(sortBy, newOrder, 0, false)
+    fetchPage(committedQ, sortBy, newOrder, 0, false)
   }
 
   function handleLoadMore() {
-    fetchPage(sortBy, order, visits.length, true)
+    fetchPage(committedQ, sortBy, order, visits.length, true)
   }
 
   const showLoadMore = !loading && total > offset + visits.length
@@ -142,6 +151,21 @@ export function MyVisitsPage() {
       </header>
 
       <div className={styles.scroll}>
+
+        {/* Search form */}
+        <form className={styles.filterBar} onSubmit={handleSearch}>
+          <input
+            className={styles.filterInput}
+            type="search"
+            placeholder="Search by name or city…"
+            value={inputQ}
+            onChange={e => setInputQ(e.target.value)}
+            autoComplete="off"
+          />
+          <button type="submit" className={styles.searchBtn} disabled={loading}>
+            Search
+          </button>
+        </form>
 
         {/* Sort controls */}
         <div className={styles.sortRow}>
@@ -167,13 +191,19 @@ export function MyVisitsPage() {
           </button>
         </div>
 
+        {!loading && !error && total > 0 && (
+          <p className={styles.visitCount}>{total} {total === 1 ? 'visit' : 'visits'}</p>
+        )}
+
         {loading && <p className={styles.stateMsg}>Loading…</p>}
         {!loading && error && <p className={styles.errorMsg}>{error}</p>}
 
         {!loading && !error && visits.length === 0 && (
           <div className={styles.empty}>
             <p className={styles.emptyMsg}>
-              No saved visits yet — use Save &amp; Share after calculating a tip to record your first visit.
+              {committedQ
+                ? 'No visits match your search.'
+                : 'No saved visits yet — use Save & Share after calculating a tip to record your first visit.'}
             </p>
           </div>
         )}
@@ -194,6 +224,9 @@ export function MyVisitsPage() {
               <div className={styles.cardMeta}>
                 <p className={styles.date}>{formatDate(visit.visitedAt)}</p>
                 <p className={styles.tipPct}>{Math.round(visit.tipPctFinal)}% tip</p>
+                <p className={styles.visitCountBadge}>
+                  {visit.restaurantVisitCount} {visit.restaurantVisitCount === 1 ? 'visit' : 'visits'}
+                </p>
               </div>
             </div>
 

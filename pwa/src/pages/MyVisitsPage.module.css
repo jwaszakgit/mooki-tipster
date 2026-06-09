@@ -30,6 +30,71 @@
   padding: 12px 12px 0;
 }
 
+/* ── Filter bar ──────────────────────────────────── */
+
+.filterBar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.filterInput {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 16px; /* prevents iOS Safari auto-zoom on focus */
+  font-family: var(--font);
+  outline: none;
+  transition: border-color 0.12s;
+  -webkit-appearance: none;
+}
+
+.filterInput:focus {
+  border-color: var(--color-brand);
+}
+
+.filterInput::placeholder {
+  color: var(--color-text-muted);
+}
+
+.searchBtn {
+  flex-shrink: 0;
+  padding: 10px 14px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font);
+  outline: none;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+
+.searchBtn:active:not(:disabled) {
+  background: var(--color-brand-light);
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+}
+
+.searchBtn:disabled {
+  opacity: 0.5;
+}
+
+/* ── Visit count ─────────────────────────────────── */
+
+.visitCount {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 10px;
+}
+
 /* ── Sort controls ───────────────────────────────── */
 
 .sortRow {
@@ -178,6 +243,13 @@
   font-weight: 600;
   color: var(--color-brand);
   margin-top: 2px;
+}
+
+.visitCountBadge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-top: 3px;
 }
 
 .cardRatings {
