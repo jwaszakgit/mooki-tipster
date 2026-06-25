@@ -13,7 +13,7 @@ export const DEFAULT_VARIABLE_LABELS = [
   'Friendly and Engaging',
   'Order Experience and Results',
   'Pace of Drinks and Food',
-  'Bill Delivery and Accuracy',
+  'Bill Delivery, Accuracy, Fees',
 ] as const
 
 // ── Types ───────────────────────────────────────────────────────────────────
