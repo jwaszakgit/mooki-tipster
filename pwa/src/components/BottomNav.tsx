@@ -5,7 +5,7 @@ import styles from './BottomNav.module.css'
 const TABS: { page: Page; icon: string; label: string }[] = [
   { page: 'home',      icon: '🏠', label: 'Home'      },
   { page: 'my-visits', icon: '📋', label: 'My Visits' },
-  { page: 'community', icon: '🌐', label: 'Community' },
+  // Community tab hidden for the friends & family app; CommunityPage/route left intact.
   { page: 'settings',  icon: '⚙️', label: 'Settings'  },
 ]
 
